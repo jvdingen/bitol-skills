@@ -1,0 +1,6 @@
+{
+  "name": "odps-yaml",
+  "description": "Open Data Product Standard (ODPS) YAML reference skill.",
+  "license": "MIT",
+  "skills": ["./"]
+}

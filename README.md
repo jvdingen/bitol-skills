@@ -25,8 +25,39 @@ in Python, or install just one if you only need that side.
 
 ## Installing a skill
 
-Skills install by copying the folder into your local skills directory. For
-Claude Code, that's `~/.claude/skills/`:
+There are two ways to install: the **Claude Code marketplace** (recommended for
+Claude Code users) or **manual copy** (works anywhere).
+
+### Option 1: Claude Code marketplace
+
+This repo doubles as a Claude Code plugin marketplace. Each skill ships as an
+independently installable plugin.
+
+```bash
+# Add the marketplace once
+/plugin marketplace add jvdingen/bitol-skills
+
+# Install whichever skills you want
+/plugin install odcs-yaml@bitol-skills
+/plugin install odps-yaml@bitol-skills
+/plugin install odcs-python@bitol-skills
+```
+
+Or, equivalently from the CLI:
+
+```bash
+claude plugin marketplace add jvdingen/bitol-skills
+claude plugin install odcs-yaml@bitol-skills
+```
+
+Updates flow through `/plugin update <name>@bitol-skills`. Uninstall with
+`/plugin uninstall <name>@bitol-skills`.
+
+### Option 2: Manual copy
+
+For non-Claude-Code Agent SDK consumers, or if you prefer a vendored folder
+without the plugin layer, copy the folder directly into your local skills
+directory. For Claude Code that's `~/.claude/skills/`:
 
 ```bash
 # Clone or download this repo, then from the repo root:
@@ -37,7 +68,9 @@ cp -r skills/odcs-python  ~/.claude/skills/odcs-python
 
 For other Agent SDK consumers, copy the same folder into whatever directory
 that framework reads skills from. The folder is the unit — `SKILL.md` plus its
-sibling `references/` subtree must move together.
+sibling `references/` subtree must move together. The `.claude-plugin/`
+subdirectory inside each skill is harmless extra metadata for non-Claude-Code
+consumers; it can be deleted if your framework objects.
 
 To uninstall, delete the folder.
 

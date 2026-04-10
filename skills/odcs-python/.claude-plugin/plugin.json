@@ -1,0 +1,6 @@
+{
+  "name": "odcs-python",
+  "description": "Open Data Contract Standard (ODCS) Python implementation reference skill.",
+  "license": "MIT",
+  "skills": ["./"]
+}

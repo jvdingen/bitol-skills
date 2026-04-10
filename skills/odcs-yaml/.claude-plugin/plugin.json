@@ -1,0 +1,6 @@
+{
+  "name": "odcs-yaml",
+  "description": "Open Data Contract Standard (ODCS) YAML reference skill.",
+  "license": "MIT",
+  "skills": ["./"]
+}
