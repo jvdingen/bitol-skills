@@ -77,7 +77,9 @@ uv run pytest                                      # run the test suite
 
 ## License
 
-See [`LICENSE`](LICENSE) if present, otherwise refer to the parent
-organization's licensing. The vendored material under each skill's
-`references/` directory remains under its respective upstream license — see the
-upstream repos linked in [`REFERENCES.md`](REFERENCES.md).
+The original work in this repo (skill prose, tooling, tests) is released under
+the [MIT License](LICENSE).
+
+The vendored material under each skill's `references/` directory is *not*
+covered by that license — those files remain under their respective upstream
+licenses. See the upstream repos linked in [`REFERENCES.md`](REFERENCES.md).

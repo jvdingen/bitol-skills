@@ -3,6 +3,8 @@ name = "bitol-skills"
 version = "0.0.0"
 description = "Agent Skills for the Bitol data standards (ODCS, ODPS)."
 requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = []
 
 [dependency-groups]
