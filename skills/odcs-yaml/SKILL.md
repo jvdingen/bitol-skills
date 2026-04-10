@@ -138,6 +138,44 @@ Match the version of the standard your tooling validates against. If you're star
 **"How do I extend the standard with custom fields?"**
 Use the `customProperties` mechanism, available at most levels (top-level, schema, property, role, etc.). See [`docs/v3.1.0/custom-other-properties.md`](references/docs/v3.1.0/custom-other-properties.md). Do *not* invent top-level fields — they will fail strict validation.
 
+## Validating a generated contract
+
+After generating or substantially editing an ODCS YAML for a user, **validate it before handing it back**. Don't return a contract you haven't checked. The skill does not bundle a validator — instead, use whatever is already on the user's system, in this order of preference:
+
+### 1. `open-data-contract-standard` pip module (preferred when available)
+
+The Bitol-maintained Pydantic implementation. Validation is implicit at construction — if `from_file` returns without raising, the contract is valid. This is the closest thing to authoritative validation and catches v2/v3 confusion and strict-mode violations (`extra='forbid'`).
+
+```bash
+python -c "from open_data_contract_standard.model import OpenDataContractStandard; OpenDataContractStandard.from_file('contract.odcs.yaml')"
+```
+
+If the import fails (`ModuleNotFoundError`), try installing with `pip install open-data-contract-standard` or `uv add open-data-contract-standard`, or fall through to option 2. Pin to the right module version for the target spec version (see the `odcs-python` skill if installed, or the upstream README).
+
+### 2. `datacontract-cli` (if installed)
+
+The third-party [Data Contract CLI](https://github.com/datacontract/datacontract-cli) consumes ODCS and exposes a user-friendly `lint` command. Not a Bitol project — a downstream consumer — so it may lag the latest spec, but it's widely installed.
+
+```bash
+datacontract lint contract.odcs.yaml
+```
+
+Exit 0 means valid. If `datacontract` is not on `PATH`, fall through to option 3.
+
+### 3. JSON Schema validation against the vendored schema (always available)
+
+The self-contained fallback. Each supported spec version has its JSON Schema vendored under [`references/schemas/`](references/schemas/). Pick the file matching the contract's `apiVersion`: `v3.0.0` → `odcs-json-schema-v3.0.0.json`, `v3.1.0` → `odcs-json-schema-v3.1.0.json`, and so on.
+
+```bash
+python -c "import json, yaml, jsonschema; jsonschema.validate(yaml.safe_load(open('contract.odcs.yaml')), json.load(open('references/schemas/odcs-json-schema-v3.1.0.json')))"
+```
+
+Requires `pyyaml` and `jsonschema` (both small, stdlib-adjacent). **Caveat**: the JSON Schema is a *companion* to the spec, not authoritative — see the Pitfalls entry on treating it as truth. A contract that passes this check may still violate the prose spec in edge cases, and vice versa. When option 1 or 2 is available, prefer it.
+
+### Reporting results
+
+If validation fails, read the error, map it back to the YAML, and either fix it and re-validate or surface the exact problem to the user. Don't silently return an invalid contract with a note — fix it first.
+
 ## Pitfalls
 
 - **Confusing v2 and v3 field names.** Tooling and examples on the internet often predate v3.0.0. If you see `columns`, `isPrimaryKey`, `isNullable`, `quantumName`, `datasetDomain`, `uuid`, `sampleValues`, `clusterStatus`, `transformSourceTables`, etc. — that's v2. The user is either reading legacy docs or has a contract that needs migrating.
@@ -147,6 +185,7 @@ Use the `customProperties` mechanism, available at most levels (top-level, schem
 - **Strict additional-properties checks in v3.1.0.** Several sections (`authoritativeDefinitions`, `customProperties`, `dataQuality`, `dataQualityCheck`, `price`, `role`, `schemaElement`, `server`, `slaProperties`, `support`, `team`) reject unknown fields in v3.1.0's strict mode. Use `customProperties` for extensions instead of adding new keys directly.
 - **Treating the JSON Schema as authoritative.** It is not — the textual spec docs are. The JSON Schema is a companion that may have bugs. When the schema and the docs disagree, the docs win.
 - **Using the deprecated team-as-array form in new contracts.** v3.1.0 still accepts it, but it is removed in v4. Use the team-as-object form for any contract written today.
+- **Generating a contract without validating it.** Agents routinely hand back YAML they never checked. Don't. Use the "Validating a generated contract" section above before returning a contract to the user.
 
 ## Reference index
 
