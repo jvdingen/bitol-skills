@@ -1,0 +1,47 @@
+# Vendoring manifest for the odcs-python skill.
+# Consumed by scripts/sync_specs.py. One [[source]] entry per upstream file.
+# Refs MUST be tags (not branches) for reproducibility.
+#
+# This skill targets the `open-data-contract-standard` PyPI package — a single
+# Pydantic model that mirrors the ODCS spec. We vendor:
+#
+#   - the lib README (has the version-mapping table that maps spec → pip module)
+#   - the model.py source (the canonical list of fields and their Python types)
+#   - the bundled schema.json (currently v3.1.0)
+#   - the test file (shows the documented usage patterns)
+#   - one minimal example contract from the bitol-io spec repo, so the skill is
+#     standalone and does not require the odcs-yaml skill to also be installed.
+
+# --- Python lib (datacontract/open-data-contract-standard-python @ v3.1.2) ---
+
+[[source]]
+repo = "datacontract/open-data-contract-standard-python"
+ref  = "v3.1.2"
+src  = "README.md"
+dest = "references/python/README.md"
+
+[[source]]
+repo = "datacontract/open-data-contract-standard-python"
+ref  = "v3.1.2"
+src  = "src/open_data_contract_standard/model.py"
+dest = "references/python/model.py"
+
+[[source]]
+repo = "datacontract/open-data-contract-standard-python"
+ref  = "v3.1.2"
+src  = "src/open_data_contract_standard/schema.json"
+dest = "references/python/schema.json"
+
+[[source]]
+repo = "datacontract/open-data-contract-standard-python"
+ref  = "v3.1.2"
+src  = "tests/test_model.py"
+dest = "references/python/test_model.py"
+
+# --- One example contract from bitol-io (for standalone use) ---
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "docs/examples/schema/table-column.odcs.yaml"
+dest = "references/examples/table-column.odcs.yaml"

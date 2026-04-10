@@ -1,0 +1,132 @@
+# Vendoring manifest for the odcs-yaml skill.
+# Consumed by scripts/sync_specs.py.
+# Never hand-edit files inside references/ — they are overwritten by sync.
+
+# ---- Per-version JSON Schemas (v3.0.0 and above) ----
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.0.0"
+src  = "schema/odcs-json-schema-v3.0.0.json"
+dest = "references/schemas/odcs-json-schema-v3.0.0.json"
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.0.1"
+src  = "schema/odcs-json-schema-v3.0.1.json"
+dest = "references/schemas/odcs-json-schema-v3.0.1.json"
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.0.2"
+src  = "schema/odcs-json-schema-v3.0.2.json"
+dest = "references/schemas/odcs-json-schema-v3.0.2.json"
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "schema/odcs-json-schema-v3.1.0.json"
+dest = "references/schemas/odcs-json-schema-v3.1.0.json"
+
+# ---- Prose docs from v3.1.0 (latest, most complete) ----
+# Earlier versions (3.0.x) are covered via the per-version schemas + CHANGELOG.
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "docs/README.md"
+dest = "references/docs/v3.1.0/README.md"
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "docs/fundamentals.md"
+dest = "references/docs/v3.1.0/fundamentals.md"
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "docs/schema.md"
+dest = "references/docs/v3.1.0/schema.md"
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "docs/data-quality.md"
+dest = "references/docs/v3.1.0/data-quality.md"
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "docs/service-level-agreement.md"
+dest = "references/docs/v3.1.0/service-level-agreement.md"
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "docs/infrastructure-servers.md"
+dest = "references/docs/v3.1.0/infrastructure-servers.md"
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "docs/support-communication-channels.md"
+dest = "references/docs/v3.1.0/support-communication-channels.md"
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "docs/roles.md"
+dest = "references/docs/v3.1.0/roles.md"
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "docs/team.md"
+dest = "references/docs/v3.1.0/team.md"
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "docs/references.md"
+dest = "references/docs/v3.1.0/references.md"
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "docs/pricing.md"
+dest = "references/docs/v3.1.0/pricing.md"
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "docs/custom-other-properties.md"
+dest = "references/docs/v3.1.0/custom-other-properties.md"
+
+# ---- Representative examples ----
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "docs/examples/all/full-example.odcs.yaml"
+dest = "references/examples/full-example.odcs.yaml"
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "docs/examples/schema/table-column.odcs.yaml"
+dest = "references/examples/table-column.odcs.yaml"
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "docs/examples/schema/kafka-schemaregistry.odcs.yaml"
+dest = "references/examples/kafka-schemaregistry.odcs.yaml"
+
+# ---- Changelog (bridges version differences) ----
+
+[[source]]
+repo = "bitol-io/open-data-contract-standard"
+ref  = "v3.1.0"
+src  = "CHANGELOG.md"
+dest = "references/CHANGELOG.md"

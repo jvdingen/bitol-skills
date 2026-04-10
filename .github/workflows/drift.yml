@@ -1,0 +1,98 @@
+name: drift
+
+# Detect drift between vendored references and the upstream Bitol repos.
+#
+# Runs weekly. Uses sync_specs.py in plan mode (no --apply) — it exits 1 if any
+# vendored file has diverged from its declared upstream ref. When that happens,
+# this job opens (or updates) a tracking issue so a human can decide whether to
+# bump the skill, append a new spec_versions entry, or update the prose body.
+#
+# This is also runnable on demand via workflow_dispatch.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install deps
+        run: uv sync
+
+      - name: Run sync_specs in plan mode
+        id: drift
+        run: |
+          set +e
+          uv run scripts/sync_specs.py skills | tee drift-report.txt
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      - name: Open / update drift issue
+        if: steps.drift.outputs.exit_code != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('drift-report.txt', 'utf8');
+            const title = 'Upstream drift detected by weekly check';
+            const body = [
+              'The weekly drift check found that one or more vendored references',
+              'have diverged from their declared upstream refs.',
+              '',
+              '```',
+              report,
+              '```',
+              '',
+              'To resolve:',
+              '1. Review the diff with `uv run scripts/sync_specs.py skills`',
+              '2. Decide whether the change is mechanical or semantic',
+              '3. `uv run scripts/sync_specs.py skills --apply` to write changes',
+              '4. If a new spec version is now in scope, append it to the skill\'s `metadata.spec_versions`',
+              '5. Update the SKILL.md body if semantics changed',
+              '6. Run `uv run scripts/validate_skill.py skills && uv run pytest`',
+              '',
+              `Triggered by workflow run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            ].join('\n');
+
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'drift',
+            });
+            const open = existing.data.find(i => i.title === title);
+            if (open) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['drift'],
+              });
+            }
+
+      - name: Fail the job if drift was detected
+        if: steps.drift.outputs.exit_code != '0'
+        run: exit 1

@@ -1,0 +1,41 @@
+# Vendoring manifest for the odps-yaml skill.
+# Consumed by scripts/sync_specs.py. One [[source]] entry per upstream file.
+# Refs MUST be tags (not branches) for reproducibility.
+
+# --- JSON Schema (v1.0.0 only) ---
+
+[[source]]
+repo = "bitol-io/open-data-product-standard"
+ref  = "v1.0.0"
+src  = "schema/odps-json-schema-v1.0.0.json"
+dest = "references/schemas/odps-json-schema-v1.0.0.json"
+
+# --- Prose spec (single-file) ---
+
+[[source]]
+repo = "bitol-io/open-data-product-standard"
+ref  = "v1.0.0"
+src  = "docs/README.md"
+dest = "references/docs/v1.0.0/README.md"
+
+# --- Examples ---
+
+[[source]]
+repo = "bitol-io/open-data-product-standard"
+ref  = "v1.0.0"
+src  = "docs/examples/simple-data-product.odps.yaml"
+dest = "references/examples/simple-data-product.odps.yaml"
+
+[[source]]
+repo = "bitol-io/open-data-product-standard"
+ref  = "v1.0.0"
+src  = "docs/examples/customer-data-product.odps.yaml"
+dest = "references/examples/customer-data-product.odps.yaml"
+
+# --- Changelog ---
+
+[[source]]
+repo = "bitol-io/open-data-product-standard"
+ref  = "v1.0.0"
+src  = "CHANGELOG.md"
+dest = "references/CHANGELOG.md"

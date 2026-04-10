@@ -1,0 +1,17 @@
+[project]
+name = "bitol-skills"
+version = "0.0.0"
+description = "Agent Skills for the Bitol data standards (ODCS, ODPS)."
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pyyaml>=6.0",
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+# Only collect our own tests; do not auto-discover vendored test files
+# inside skills/*/references/.
+testpaths = ["tests"]
