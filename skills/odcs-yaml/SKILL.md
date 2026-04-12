@@ -54,11 +54,11 @@ A complete ODCS v3 contract is structured as follows. Each section has its own r
 
 | Section | Purpose | Reference |
 |---|---|---|
-| **Fundamentals** | Contract identity, version, status, domain, ownership metadata. The `apiVersion`, `kind`, `id`, `version`, and `status` fields are required. | [`docs/v3.1.0/fundamentals.md`](references/docs/v3.1.0/fundamentals.md) |
+| **Fundamentals** | Contract identity, version, status, domain, ownership metadata. The `apiVersion`, `kind`, `id`, `version`, and `status` fields are required. Note: `description` is an **object** (`description.purpose`, `description.limitations`, `description.usage`), not a plain string. | [`docs/v3.1.0/fundamentals.md`](references/docs/v3.1.0/fundamentals.md) |
 | **Schema** | The dataset structure: objects, properties, types, primary keys, partitioning, transformations. Supports tables, documents, hierarchies, and arrays. | [`docs/v3.1.0/schema.md`](references/docs/v3.1.0/schema.md) |
 | **References** | Authoritative external definitions and links. | [`docs/v3.1.0/references.md`](references/docs/v3.1.0/references.md) |
-| **Data Quality** | Quality checks, scheduling, library of common metrics (`rowCount`, `nullValues`, `invalidValues`, `duplicateValues`, `missingValues` since v3.1.0). | [`docs/v3.1.0/data-quality.md`](references/docs/v3.1.0/data-quality.md) |
-| **Support & Communication Channels** | How consumers reach the data product team — Slack, email, ticketing, notifications. | [`docs/v3.1.0/support-communication-channels.md`](references/docs/v3.1.0/support-communication-channels.md) |
+| **Data Quality** | Quality checks in four types: `text` (human-readable), `library` (predefined metrics like `rowCount`, `nullValues`, `invalidValues`, `duplicateValues`, `missingValues`), `sql` (custom query), and `custom` (vendor-specific, e.g. Soda, Great Expectations). `schedule` and `scheduler` are **per-rule** fields, not global. | [`docs/v3.1.0/data-quality.md`](references/docs/v3.1.0/data-quality.md) |
+| **Support & Communication Channels** | How consumers reach the data product team. `channel` is required. `tool` values: `slack`, `teams`, `email`, `ticket`, `discord`, `googlechat`, `other`. `scope` values: `interactive`, `announcements`, `issues`, `notifications`. | [`docs/v3.1.0/support-communication-channels.md`](references/docs/v3.1.0/support-communication-channels.md) |
 | **Pricing** | Cost model for consumers (introduced/expanded across v3.x). | [`docs/v3.1.0/pricing.md`](references/docs/v3.1.0/pricing.md) |
 | **Team** | Members of the team owning the contract. | [`docs/v3.1.0/team.md`](references/docs/v3.1.0/team.md) |
 | **Roles** | Access roles and the permissions/responsibilities they imply. | [`docs/v3.1.0/roles.md`](references/docs/v3.1.0/roles.md) |
@@ -93,7 +93,7 @@ The full per-version change history is in [`CHANGELOG.md`](references/CHANGELOG.
 
 ### v3.1.0 — current (released 2025-12-08)
 - **Modular docs**: the spec is now split into per-section docs instead of one monolithic file.
-- **Relationships (foreign keys)** added to both `SchemaObject` and `SchemaProperty` (`relationships[]` field). Supports composite keys, schema-level and property-level relationships, dot-shorthand (`accounts.address_street`) and fully qualified (`/schema/.../properties/...`) references.
+- **Relationships (foreign keys)** added to both `SchemaObject` and `SchemaProperty` (`relationships[]` field). Supports composite keys, dot-shorthand (`accounts.address_street`) and fully qualified (`/schema/.../properties/...`) references. **Important**: at property level, `from` is implicit (do not specify it); at schema level, both `from` and `to` are required.
 - **Logical types**: `timestamp` and `time` added to `logicalType`; new `timezone` and `defaultTimezone` options in `logicalTypeOptions`.
 - **Quality**: standard library of metrics (`rowCount`, `nullValues`, `invalidValues`, `duplicateValues`, `missingValues`); explicit `schedule` and `scheduler` fields.
 - **Team**: now an *object* (with `name`, `description`, `members`, `tags`, `customProperties`, `authoritativeDefinitions`) instead of an array. The v3.0.x array form is still accepted but **deprecated** and will be removed in v4.
@@ -178,6 +178,7 @@ If validation fails, read the error, map it back to the YAML, and either fix it 
 
 ## Pitfalls
 
+- **Setting `description:` to a plain string.** The top-level `description` is an object with sub-keys `purpose`, `limitations`, and `usage`, not a scalar. See [`fundamentals.md`](references/docs/v3.1.0/fundamentals.md).
 - **Confusing v2 and v3 field names.** Tooling and examples on the internet often predate v3.0.0. If you see `columns`, `isPrimaryKey`, `isNullable`, `quantumName`, `datasetDomain`, `uuid`, `sampleValues`, `clusterStatus`, `transformSourceTables`, etc. — that's v2. The user is either reading legacy docs or has a contract that needs migrating.
 - **Setting `required: false` thinking it means "primary key not required".** The `required` field is the *inverse* of v2's `isNullable`. `required: true` means the field cannot be null.
 - **Expecting `name` to be required at the top level.** It is not. `id` is the unique identifier.

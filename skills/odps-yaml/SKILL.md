@@ -94,8 +94,8 @@ outputPorts:
 ```
 
 Output ports can carry **provenance** that input ports cannot:
-- `sbom[]` — a software bill of materials (links to an external SBOM document or inline metadata).
-- `inputContracts[]` — the *specific* upstream contracts this output was built from. This is how lineage gets captured at the contract level.
+- `sbom[]` — a software bill of materials. Each entry is an object with `url` (required) and `type` (default `"external"`), not a plain string.
+- `inputContracts[]` — the *specific* upstream contracts this output was built from. This is how lineage gets captured at the contract level. Each entry accepts either `id` or `contractId` to reference the upstream contract (both are valid).
 
 The `type` field on an output port (`tables`, etc.) is a free-form hint at the *kind* of port surface — it is not enumerated in v1.0.0.
 
