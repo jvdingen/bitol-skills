@@ -93,7 +93,7 @@ The full per-version change history is in [`CHANGELOG.md`](references/CHANGELOG.
 
 ### v3.1.0 — current (released 2025-12-08)
 - **Modular docs**: the spec is now split into per-section docs instead of one monolithic file.
-- **Relationships (foreign keys)** added to both `SchemaObject` and `SchemaProperty` (`relationships[]` field). Supports composite keys, dot-shorthand (`accounts.address_street`) and fully qualified (`/schema/.../properties/...`) references. **Important**: at property level, `from` is implicit (do not specify it); at schema level, both `from` and `to` are required.
+- **Relationships (foreign keys)** added to both `SchemaObject` and `SchemaProperty` (`relationships[]` field). Supports composite keys, dot-shorthand (`accounts.address_street`) and fully qualified (`/schema/.../properties/...`) references. **Important**: at property level, `from` is implicit (do not specify it); at schema level, both `from` and `to` are required. Full syntax and examples are in [`references.md`](references/docs/v3.1.0/references.md), not `schema.md`.
 - **Logical types**: `timestamp` and `time` added to `logicalType`; new `timezone` and `defaultTimezone` options in `logicalTypeOptions`.
 - **Quality**: standard library of metrics (`rowCount`, `nullValues`, `invalidValues`, `duplicateValues`, `missingValues`); explicit `schedule` and `scheduler` fields.
 - **Team**: now an *object* (with `name`, `description`, `members`, `tags`, `customProperties`, `authoritativeDefinitions`) instead of an array. The v3.0.x array form is still accepted but **deprecated** and will be removed in v4.
@@ -164,6 +164,7 @@ If validation fails, read the error, map it back to the YAML, and fix it before 
 - **Strict additional-properties checks in v3.1.0.** Several sections (`authoritativeDefinitions`, `customProperties`, `dataQuality`, `dataQualityCheck`, `price`, `role`, `schemaElement`, `server`, `slaProperties`, `support`, `team`) reject unknown fields in v3.1.0's strict mode. Use `customProperties` for extensions instead of adding new keys directly.
 - **Treating the JSON Schema as authoritative.** It is not — the textual spec docs are. The JSON Schema is a companion that may have bugs. When the schema and the docs disagree, the docs win.
 - **Using the deprecated team-as-array form in new contracts.** v3.1.0 still accepts it, but it is removed in v4. Use the team-as-object form for any contract written today.
+- **Upstream typo in `team.md`**: the definition table describes `team.members.description` as "The user's name" — this is a copy-paste error from the `name` row. The field is a freeform description of the member's role or responsibilities, as the example contracts show.
 - **Generating a contract without validating it.** Agents routinely hand back YAML they never checked. Don't. Use the "Validating a generated contract" section above before returning a contract to the user.
 
 ## Reference index

@@ -30,35 +30,33 @@ jobs:
           fi
 
           echo "Changed skills: $changed_skills"
-
-          for skill in $changed_skills; do
-            echo "Bumping $skill"
-            python3 -c "
+          echo "$changed_skills" | python3 -c "
           import json, sys
 
-          skill = '$skill'
+          skills = [s.strip() for s in sys.stdin if s.strip()]
           path = '.claude-plugin/marketplace.json'
 
           with open(path) as f:
               data = json.load(f)
 
+          changed = False
           for plugin in data['plugins']:
-              if plugin['name'] == skill:
+              if plugin['name'] in skills:
                   old = plugin['version']
                   parts = old.split('.')
+                  if len(parts) != 3 or not parts[2].isdigit():
+                      print(f'  {plugin[\"name\"]}: skipping malformed version \"{old}\"')
+                      continue
                   parts[2] = str(int(parts[2]) + 1)
                   plugin['version'] = '.'.join(parts)
-                  print(f'  {skill}: {old} -> {plugin[\"version\"]}')
-                  break
-          else:
-              print(f'  {skill}: not found in marketplace.json, skipping')
-              sys.exit(0)
+                  print(f'  {plugin[\"name\"]}: {old} -> {plugin[\"version\"]}')
+                  changed = True
 
-          with open(path, 'w') as f:
-              json.dump(data, f, indent=2)
-              f.write('\n')
+          if changed:
+              with open(path, 'w') as f:
+                  json.dump(data, f, indent=2)
+                  f.write('\n')
           "
-          done
 
       - name: Check for changes
         id: check

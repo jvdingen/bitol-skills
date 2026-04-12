@@ -109,7 +109,7 @@ managementPorts:
   description: Kafka topic for dictionary updates
 ```
 
-Management ports describe how operators *interact* with the product, separate from data flow. Three `content` categories: **discoverability** (catalog/dictionary endpoints), **observability** (metrics/logs/traces), **control** (start/stop/refresh actions). Type is `rest` (default) or `topic`.
+Management ports describe how operators *interact* with the product, separate from data flow. Four `content` values: **dictionary** (data dictionary/catalog updates), **discoverability** (catalog endpoints), **observability** (metrics/logs/traces), **control** (start/stop/refresh actions). Type is `rest` (default) or `topic`.
 
 See [`examples/customer-data-product.odps.yaml`](references/examples/customer-data-product.odps.yaml) for a comprehensive product exercising all three port types, and [`examples/simple-data-product.odps.yaml`](references/examples/simple-data-product.odps.yaml) for the minimum-viable shape.
 
@@ -131,7 +131,7 @@ The first publicly approved release; structurally close to v1.0.0 but missing th
 ## Common questions
 
 **"What's the minimum valid ODPS data product?"**
-The required fields per the v1.0.0 schema are `apiVersion`, `kind: DataProduct`, `id`, and `status`. A typical minimal product also adds a `name` and at least one `outputPorts[]` entry. See [`examples/simple-data-product.odps.yaml`](references/examples/simple-data-product.odps.yaml) for a small example with one input port and one output port.
+The required fields per the v1.0.0 schema are `apiVersion`, `kind: DataProduct`, `id`, and `status`. A typical minimal product also adds a `name` and at least one `outputPorts[]` entry. See [`examples/simple-data-product.odps.yaml`](references/examples/simple-data-product.odps.yaml) for the shape, but note it declares `apiVersion: v0.9.0` — use `apiVersion: v1.0.0` for new products.
 
 **"How does ODPS relate to ODCS?"**
 ODPS describes the *product* — the packaging, ownership, and the set of ports it exposes. ODCS describes the *contract* on each port — the schema, the quality rules, the SLA, the server bindings for one specific dataset. A typical data platform has many ODCS contracts grouped into fewer ODPS products, with the linkage made via `contractId` on each port.
@@ -160,7 +160,7 @@ The v1.0.0 spec marks `outputPorts` as the meaningful one ("a data product witho
 - **Treating ports as schema definitions.** A port is a *named reference* to a contract, not the contract itself. Defining schema fields directly inside an `outputPort` is wrong — put them in the linked ODCS contract.
 - **Forgetting the (name, version) key for ports.** Two `inputPorts` entries with the same `name` but different `version` are two ports, not a duplicate. This is intentional — it lets producers run multiple versions during migration.
 - **Vendored examples declare `apiVersion: v0.9.0`.** Both example files in `docs/examples/` (vendored at [`examples/simple-data-product.odps.yaml`](references/examples/simple-data-product.odps.yaml) and [`examples/customer-data-product.odps.yaml`](references/examples/customer-data-product.odps.yaml)) declare `apiVersion: v0.9.0` even though they're tagged in the v1.0.0 release. New products should use `apiVersion: v1.0.0` — the examples are slightly stale and should not be copied verbatim for the version field.
-- **Treating the JSON Schema as authoritative.** As with ODCS, the JSON Schema is a companion to the prose spec, not the source of truth. When the schema and the docs disagree, the docs win.
+- **Treating the JSON Schema as authoritative.** As with ODCS, the JSON Schema is a companion to the prose spec, not the source of truth. When the schema and the docs disagree, the docs win. However, note that the JSON Schema is *stricter* than the prose for input port `contractId` and output port `version` — both are marked optional in the docs but required by the schema. Always include them to avoid validation failures.
 - **Pre-v1.0.0 team-as-array form.** Any product that declares `team` as an array is using the deprecated v0.9.0 form. v1.0.0 aligned the team structure with ODCS v3.1.0's team-as-object — use that form for new products.
 - **Adding free-form keys for things that have `customProperties`.** Top-level extension keys will fail strict validation. Use `customProperties[]` at the appropriate level (top, port, member, etc.) instead.
 
