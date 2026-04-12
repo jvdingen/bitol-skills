@@ -140,41 +140,19 @@ Use the `customProperties` mechanism, available at most levels (top-level, schem
 
 ## Validating a generated contract
 
-After generating or substantially editing an ODCS YAML for a user, **validate it before handing it back**. Don't return a contract you haven't checked. The skill does not bundle a validator — instead, use whatever is already on the user's system, in this order of preference:
+After generating or substantially editing an ODCS YAML for a user, **validate it before handing it back**. Don't return a contract you haven't checked.
 
-### 1. `open-data-contract-standard` pip module (preferred when available)
-
-The Bitol-maintained Pydantic implementation. Validation is implicit at construction — if `from_file` returns without raising, the contract is valid. This is the closest thing to authoritative validation and catches v2/v3 confusion and strict-mode violations (`extra='forbid'`).
+This skill bundles a validation script at [`scripts/validate_contract.py`](scripts/validate_contract.py). Run it against any contract file:
 
 ```bash
-python -c "from open_data_contract_standard.model import OpenDataContractStandard; OpenDataContractStandard.from_file('contract.odcs.yaml')"
+uv run --with pyyaml --with jsonschema scripts/validate_contract.py contract.odcs.yaml
 ```
 
-If the import fails (`ModuleNotFoundError`), try installing with `pip install open-data-contract-standard` or `uv add open-data-contract-standard`, or fall through to option 2. Pin to the right module version for the target spec version (see the `odcs-python` skill if installed, or the upstream README).
+The script uses the Bitol Pydantic model (`open-data-contract-standard`) if already installed, otherwise falls back to JSON Schema validation against the vendored schemas in [`references/schemas/`](references/schemas/). Exit codes: **0** = valid, **1** = invalid (error printed to stderr), **3** = validation could not run (missing dependencies). If the exit code is 3, **tell the user explicitly that the contract was not validated** and show the install instructions from the error output.
 
-### 2. `datacontract-cli` (if installed)
+**Caveat**: the JSON Schema fallback is a *companion* to the spec, not authoritative (see Pitfalls). A contract that passes the schema check may still violate the prose spec in edge cases. The Pydantic path is stricter.
 
-The third-party [Data Contract CLI](https://github.com/datacontract/datacontract-cli) consumes ODCS and exposes a user-friendly `lint` command. Not a Bitol project — a downstream consumer — so it may lag the latest spec, but it's widely installed.
-
-```bash
-datacontract lint contract.odcs.yaml
-```
-
-Exit 0 means valid. If `datacontract` is not on `PATH`, fall through to option 3.
-
-### 3. JSON Schema validation against the vendored schema (always available)
-
-The self-contained fallback. Each supported spec version has its JSON Schema vendored under [`references/schemas/`](references/schemas/). Pick the file matching the contract's `apiVersion`: `v3.0.0` → `odcs-json-schema-v3.0.0.json`, `v3.1.0` → `odcs-json-schema-v3.1.0.json`, and so on.
-
-```bash
-python -c "import json, yaml, jsonschema; jsonschema.validate(yaml.safe_load(open('contract.odcs.yaml')), json.load(open('references/schemas/odcs-json-schema-v3.1.0.json')))"
-```
-
-Requires `pyyaml` and `jsonschema` (both small, stdlib-adjacent). **Caveat**: the JSON Schema is a *companion* to the spec, not authoritative — see the Pitfalls entry on treating it as truth. A contract that passes this check may still violate the prose spec in edge cases, and vice versa. When option 1 or 2 is available, prefer it.
-
-### Reporting results
-
-If validation fails, read the error, map it back to the YAML, and either fix it and re-validate or surface the exact problem to the user. Don't silently return an invalid contract with a note — fix it first.
+If validation fails, read the error, map it back to the YAML, and fix it before returning the contract to the user. Never silently skip validation and claim the contract is correct.
 
 ## Pitfalls
 
