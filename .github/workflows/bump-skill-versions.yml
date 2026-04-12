@@ -1,0 +1,74 @@
+name: bump-skill-versions
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'skills/**'
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    # skip commits made by this workflow
+    if: github.event.head_commit.author.name != 'github-actions[bot]'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Find changed skills and bump patch versions
+        run: |
+          changed_skills=$(git diff --name-only HEAD~1 HEAD -- skills/ \
+            | cut -d/ -f2 | sort -u)
+
+          if [ -z "$changed_skills" ]; then
+            echo "No skill directories changed."
+            exit 0
+          fi
+
+          echo "Changed skills: $changed_skills"
+
+          for skill in $changed_skills; do
+            echo "Bumping $skill"
+            python3 -c "
+          import json, sys
+
+          skill = '$skill'
+          path = '.claude-plugin/marketplace.json'
+
+          with open(path) as f:
+              data = json.load(f)
+
+          for plugin in data['plugins']:
+              if plugin['name'] == skill:
+                  old = plugin['version']
+                  parts = old.split('.')
+                  parts[2] = str(int(parts[2]) + 1)
+                  plugin['version'] = '.'.join(parts)
+                  print(f'  {skill}: {old} -> {plugin[\"version\"]}')
+                  break
+          else:
+              print(f'  {skill}: not found in marketplace.json, skipping')
+              sys.exit(0)
+
+          with open(path, 'w') as f:
+              json.dump(data, f, indent=2)
+              f.write('\n')
+          "
+          done
+
+      - name: Check for changes
+        id: check
+        run: |
+          if git diff --quiet .claude-plugin/marketplace.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .claude-plugin/marketplace.json
+          git commit -m "chore: bump skill patch versions for changed skills"
+          git push

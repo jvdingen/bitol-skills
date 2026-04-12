@@ -12,14 +12,14 @@
       "name": "odcs-yaml",
       "source": "./skills/odcs-yaml",
       "description": "Open Data Contract Standard (ODCS) reference for the YAML data contract format. Covers structure, semantics, top-level sections, the v3 object/property/element schema model, and version differences. Supports ODCS 3.0.0, 3.0.1, 3.0.2, and 3.1.0.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "keywords": ["bitol", "odcs", "data-contract", "yaml", "schema"]
     },
     {
       "name": "odps-yaml",
       "source": "./skills/odps-yaml",
       "description": "Open Data Product Standard (ODPS) reference for the YAML data product format. Covers data products, input/output/management ports, and the relationship between ODPS data products and ODCS data contracts. Supports ODPS 1.0.0.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "keywords": ["bitol", "odps", "data-product", "yaml"]
     },
     {
