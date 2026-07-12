@@ -12,6 +12,8 @@ dev = [
     "pyyaml>=6.0",
     "pytest>=8.0",
     "jsonschema>=4.0",
+    # lets the tests exercise the odcs-yaml skill's pydantic validation path
+    "open-data-contract-standard>=3.0.1",
 ]
 
 [tool.pytest.ini_options]
