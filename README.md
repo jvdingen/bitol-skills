@@ -128,6 +128,7 @@ uv sync                                            # install Python deps
 uv run scripts/validate_skill.py skills            # lint all skills
 uv run scripts/sync_specs.py skills                # check vendored material vs upstream
 uv run scripts/sync_specs.py skills --apply        # update vendored material
+uv run scripts/check_releases.py skills            # check for newer upstream releases
 uv run pytest                                      # run the test suite
 ```
 

@@ -31,7 +31,7 @@ def make_skill(
 
 VALID_FM = """\
 name: test-skill
-description: A test skill for validation.
+description: A test skill for validation. Supports spec version 1.0.0.
 metadata:
   spec_versions:
     - "1.0.0"
@@ -134,6 +134,17 @@ def test_bad_spec_version_format_fails(tmp_path):
     skill = make_skill(tmp_path, "test-skill", fm.strip())
     errors = validate_skill(skill)
     assert any("semver" in e for e in errors)
+
+
+def test_spec_version_missing_from_description_fails(tmp_path):
+    fm = (
+        "name: test-skill\ndescription: No versions mentioned here.\n"
+        "metadata:\n  spec_versions:\n    - '1.0.0'\n    - '2.0.0'\n"
+    )
+    skill = make_skill(tmp_path, "test-skill", fm.strip())
+    errors = validate_skill(skill)
+    assert any("'1.0.0' is not mentioned in the description" in e for e in errors)
+    assert any("'2.0.0' is not mentioned in the description" in e for e in errors)
 
 
 def test_sources_toml_without_references_fails(tmp_path):

@@ -106,11 +106,18 @@ uv sync                                            # install Python deps
 uv run pytest                                      # run all tests
 uv run scripts/sync_specs.py                       # diff vendored refs vs upstream, print report
 uv run scripts/sync_specs.py --apply               # write upstream changes into references/
+uv run scripts/check_releases.py skills            # any upstream release newer than pinned refs?
 uv run scripts/validate_skill.py skills/<name>     # lint a single skill
 uv run scripts/validate_skill.py skills            # lint all skills
 ```
 
 ## Drift workflow (when upstream changes)
+
+New releases are noticed automatically: the daily `upstream-checks` workflow runs
+`check_releases.py` (compares pinned `sources.toml` tags against upstream tags via
+anonymous `git ls-remote`) plus `sync_specs.py` in plan mode, and opens a tracking issue
+when either finds something. For a *new version*, first retarget/add `[[source]]` entries
+in the skill's `sources.toml` to the new tag, then:
 
 1. `uv run scripts/sync_specs.py` — see what drifted.
 2. Review the diff. Decide whether the change is mechanical (schema field added) or semantic

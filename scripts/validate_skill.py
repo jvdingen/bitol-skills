@@ -10,6 +10,8 @@ Spec rules (from https://agentskills.io/specification):
 
 Project rules:
     - metadata.spec_versions present, list of semver strings (X.Y.Z)
+    - every spec_versions entry also appears in the description, so the agent
+      surfaces supported versions at discovery time
     - if sources.toml exists, references/ must exist
     - directory is references/ (plural), never reference/
     - every relative link in the SKILL.md body resolves to a file inside the
@@ -140,6 +142,26 @@ def validate_spec_versions(fm: dict) -> list[str]:
     return errors
 
 
+def validate_versions_in_description(fm: dict) -> list[str]:
+    """Project rule: each spec_versions entry must appear in the description.
+
+    Only fires when both fields are individually valid — their own validators
+    already report malformed shapes.
+    """
+    desc = fm.get("description")
+    metadata = fm.get("metadata")
+    if not isinstance(desc, str) or not isinstance(metadata, dict):
+        return []
+    sv = metadata.get("spec_versions")
+    if not isinstance(sv, list):
+        return []
+    return [
+        f"project rule: spec version {v!r} is not mentioned in the description"
+        for v in sv
+        if isinstance(v, str) and SEMVER_RE.match(v) and v not in desc
+    ]
+
+
 def validate_layout(skill_dir: Path) -> list[str]:
     """Project rule: references/ exists if sources.toml exists; never reference/ singular."""
     errors = []
@@ -222,6 +244,7 @@ def validate_skill(skill_dir: Path) -> list[str]:
     errors += validate_description(fm)
     errors += validate_compatibility(fm)
     errors += validate_spec_versions(fm)
+    errors += validate_versions_in_description(fm)
     errors += validate_layout(skill_dir)
     errors += validate_links(skill_dir, body)
     errors += validate_plugin_manifest(skill_dir)
