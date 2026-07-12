@@ -1,0 +1,206 @@
+# Data contract for the jaffle_shop `orders` mart.
+# Built step by step in docs/tutorials/odcs-yaml.md.
+
+apiVersion: v3.1.0
+kind: DataContract
+id: 8f8e7b5a-5fd8-4d35-bd8e-1177136c034b
+name: orders
+version: 1.0.0
+status: active
+
+domain: jaffle-shop
+dataProduct: jaffle_shop
+tenant: JaffleShopInc
+
+description:
+  purpose: One row per order, with the order lifecycle status and the paid amount broken down by payment method.
+  limitations: Only orders that reached the shop system are included; abandoned carts are not. Amounts are in USD.
+  usage: Revenue reporting, order-status dashboards, and joining customer activity to payments.
+
+tags:
+  - jaffle-shop
+  - orders
+  - finance
+
+schema:
+  - name: orders
+    physicalName: orders
+    physicalType: table
+    businessName: Jaffle Shop orders
+    description: Fact table with one row per order placed in the jaffle shop.
+    dataGranularityDescription: One row per order (order_id is unique).
+    properties:
+      - name: order_id
+        businessName: Order identifier
+        logicalType: integer
+        physicalType: INTEGER
+        description: Primary key of the order.
+        primaryKey: true
+        primaryKeyPosition: 1
+        required: true
+        unique: true
+        examples:
+          - 1
+          - 99
+        quality:
+          - id: order_id_not_null
+            metric: nullValues
+            mustBe: 0
+            description: Every order carries an identifier.
+          - id: order_id_unique
+            metric: duplicateValues
+            mustBe: 0
+            description: order_id is the primary key and must be unique.
+      - name: customer_id
+        businessName: Customer identifier
+        logicalType: integer
+        physicalType: INTEGER
+        description: The customer who placed the order. Joins to the customers mart.
+        required: true
+        quality:
+          - id: customer_id_not_null
+            metric: nullValues
+            mustBe: 0
+            description: Every order belongs to a customer.
+      - name: order_date
+        businessName: Order date
+        logicalType: date
+        physicalType: DATE
+        description: Calendar date the order was placed.
+        required: true
+        examples:
+          - "2018-01-01"
+      - name: status
+        businessName: Order status
+        logicalType: string
+        physicalType: VARCHAR
+        description: Lifecycle status of the order.
+        required: true
+        quality:
+          - id: status_valid_values
+            metric: invalidValues
+            arguments:
+              validValues:
+                - placed
+                - shipped
+                - completed
+                - return_pending
+                - returned
+            mustBe: 0
+            description: Status must be one of the five known lifecycle values.
+      - name: credit_card_amount
+        businessName: Credit card amount
+        logicalType: number
+        physicalType: DECIMAL(10,2)
+        description: Portion of the order paid by credit card, in USD.
+        required: true
+        transformSourceObjects:
+          - raw_payments
+        transformLogic: SUM(amount) FILTER (payment_method = 'credit_card') / 100.0, per order
+      - name: coupon_amount
+        businessName: Coupon amount
+        logicalType: number
+        physicalType: DECIMAL(10,2)
+        description: Portion of the order paid with coupons, in USD.
+        required: true
+        transformSourceObjects:
+          - raw_payments
+        transformLogic: SUM(amount) FILTER (payment_method = 'coupon') / 100.0, per order
+      - name: bank_transfer_amount
+        businessName: Bank transfer amount
+        logicalType: number
+        physicalType: DECIMAL(10,2)
+        description: Portion of the order paid by bank transfer, in USD.
+        required: true
+        transformSourceObjects:
+          - raw_payments
+        transformLogic: SUM(amount) FILTER (payment_method = 'bank_transfer') / 100.0, per order
+      - name: gift_card_amount
+        businessName: Gift card amount
+        logicalType: number
+        physicalType: DECIMAL(10,2)
+        description: Portion of the order paid with gift cards, in USD.
+        required: true
+        transformSourceObjects:
+          - raw_payments
+        transformLogic: SUM(amount) FILTER (payment_method = 'gift_card') / 100.0, per order
+      - name: amount
+        businessName: Order total
+        logicalType: number
+        physicalType: DECIMAL(10,2)
+        description: Total paid for the order across all payment methods, in USD.
+        required: true
+        transformSourceObjects:
+          - raw_payments
+        transformLogic: SUM(amount) / 100.0, per order
+        quality:
+          - id: amount_not_negative
+            type: sql
+            query: |
+              SELECT COUNT(*) FROM {object} WHERE {property} < 0
+            mustBe: 0
+            description: An order total can be zero (fully refunded) but never negative.
+    quality:
+      - id: orders_row_count
+        metric: rowCount
+        mustBeGreaterThan: 0
+        description: The mart must never be published empty.
+      - id: orders_amount_reconciles
+        type: sql
+        query: |
+          SELECT ABS(
+            (SELECT SUM(amount) FROM {object}) -
+            (SELECT SUM(amount) / 100.0 FROM raw_payments)
+          )
+        mustBeLessThan: 0.01
+        description: The mart's total amount reconciles with the raw payments ledger.
+
+slaProperties:
+  - property: frequency
+    value: 1
+    unit: d
+    element: orders.order_date
+  - property: latency
+    value: 4
+    unit: h
+    element: orders.order_date
+
+servers:
+  - server: local-duckdb
+    type: duckdb
+    environment: dev
+    database: jaffle_shop.duckdb
+    schema: main
+    description: Local DuckDB file built by setup_jaffle_shop.sql.
+
+team:
+  name: jaffle-analytics
+  description: Analytics engineering team owning the jaffle shop marts.
+  members:
+    - username: alice@jaffleshop.example
+      name: Alice Ordway
+      role: owner
+      description: Data product owner.
+    - username: bob@jaffleshop.example
+      name: Bob Cratchit
+      role: data engineer
+      description: Maintains the payment pivot transformation.
+
+support:
+  - channel: "#jaffle-shop-data"
+    tool: slack
+    scope: interactive
+    url: https://jaffleshop.example.slack.com/archives/C000JAFFLE
+  - channel: jaffle-data-help
+    tool: email
+    scope: issues
+    url: mailto:jaffle-data-help@jaffleshop.example
+
+price:
+  priceAmount: 0
+  priceCurrency: USD
+  priceUnit: none
+
+customProperties:
+  - property: sourceSystem
+    value: jaffle-shop-app
