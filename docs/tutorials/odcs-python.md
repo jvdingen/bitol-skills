@@ -1,15 +1,15 @@
-# Tutorial 2 — Generate the `customers` contract from DuckDB in Python (`odcs-python`)
+# Tutorial 2: Generate the `customers` contract from DuckDB in Python (`odcs-python`)
 
 In [tutorial 1](odcs-yaml.md) you wrote a contract by hand. That's the right
-way to learn the format — and the wrong way to maintain fifty of them. This
-tutorial flips the direction: a Python script **introspects the live
-`customers` mart in DuckDB and generates its ODCS contract**, using the
+way to learn the format, and the wrong way to maintain fifty of them. This
+tutorial flips the direction: a Python script introspects the live
+`customers` mart in DuckDB and generates its ODCS contract, using the
 official [`open-data-contract-standard`](https://pypi.org/project/open-data-contract-standard/)
 package.
 
-**Skill showcased**: [`odcs-python`](../../skills/odcs-python/). It teaches
-your agent the package's Pydantic model tree, the spec→pip version map, and —
-above all — the alias gotchas you're about to meet.
+**Skill**: [`odcs-python`](../../skills/odcs-python/). It teaches
+your agent the package's Pydantic model tree, the spec-to-pip version map,
+and above all the alias gotchas you're about to meet.
 
 **You need**: the DuckDB database from the [setup](README.md#setup-10-minutes)
 and `uv`. Tutorial 1 is helpful context but not required.
@@ -19,32 +19,32 @@ The finished script is committed at
 its output at
 [`jaffle-shop/contracts/customers.odcs.yaml`](jaffle-shop/contracts/customers.odcs.yaml).
 
-> **🤖 Ask your agent** (with `odcs-python` installed):
+> **Ask your agent** (with `odcs-python` installed):
 > *"Write a Python script that introspects the `customers` table in
 > `jaffle_shop.duckdb` and generates an ODCS v3.1.0 contract for it with the
 > open-data-contract-standard package."*
 >
 > Watch whether it constructs the contract with `schema=` and reads it back
-> with `.schema_` — that's the gotcha that separates an agent that knows this
+> with `.schema_`. That's the gotcha that separates an agent that knows this
 > package from one that's guessing.
 
 ## 1. Install the right version
 
-The pip module's version tracks the spec's major.minor **but not the patch**:
+The pip module's version tracks the spec's major.minor, but not the patch:
 
 | ODCS spec | pip module |
 |---|---|
 | 3.0.1 | `>=3.0.1` |
-| 3.0.2 | `>=3.0.4` ← not 3.0.2! |
+| 3.0.2 | `>=3.0.4` (not 3.0.2!) |
 | 3.1.0 | `>=3.1.0` |
 
 We target spec v3.1.0, so anything `>=3.1.0` works. The tutorial commands use
 `uv run --with open-data-contract-standard`, which grabs the latest.
 
-## 2. Parse tutorial 1's contract — and meet `schema_`
+## 2. Parse tutorial 1's contract and meet `schema_`
 
 Start by loading the contract you already have. Validation is *implicit* in
-this package: parsing **is** validating (there is no separate `.validate()`).
+this package: parsing *is* validating (there is no separate `.validate()`).
 
 ```bash
 cd docs/tutorials/jaffle-shop
@@ -65,16 +65,16 @@ That trailing underscore is the package's most famous quirk: `schema` collides
 with a Pydantic built-in, so the field is `schema_` with a YAML alias. The
 rules (all four matter):
 
-- **YAML** always says `schema:` — the alias.
-- **Reading** the model: `contract.schema_`.
-- **Constructing**: pass `schema=` (the alias). `schema_=` raises
-  `ValidationError` — the model doesn't enable `populate_by_name`, and the
-  root model's `extra='forbid'` rejects the unknown name.
-- **Serializing**: `to_yaml()` emits `schema:` again automatically.
+- YAML always says `schema:`, the alias.
+- Reading the model: `contract.schema_`.
+- Constructing: pass `schema=` (the alias). `schema_=` raises
+  `ValidationError` because the model doesn't enable `populate_by_name`,
+  and the root model's `extra='forbid'` rejects the unknown name.
+- Serializing: `to_yaml()` emits `schema:` again automatically.
 
 ## 3. Introspect DuckDB
 
-DuckDB will happily tell us the physical shape of the mart — the same
+DuckDB will happily tell us the physical shape of the mart. This is the same
 `DESCRIBE` you ran by eye in tutorial 1, now consumed programmatically:
 
 ```python
@@ -114,10 +114,10 @@ properties = [
 
 Introspection only gets you the mechanical half. The catalog cannot tell you
 that `first_order` is legitimately null for customers who never ordered, or
-what `customer_lifetime_value` means in business terms — in the
+what `customer_lifetime_value` means in business terms. In the
 [finished script](jaffle-shop/scripts/generate_contract.py) that context lives
-in a small hand-written `DESCRIPTIONS`/`REQUIRED` block that gets merged in.
-Generated structure, curated meaning.
+in a small hand-written `DESCRIPTIONS`/`REQUIRED` block that gets merged into
+the generated structure.
 
 ## 4. Assemble and serialize the contract
 
@@ -155,12 +155,12 @@ print(contract.to_yaml())
 
 `to_yaml()` dumps with `exclude_none=True, exclude_defaults=True, by_alias=True`:
 unset fields vanish, and `schema_` comes out as `schema:`. Don't be surprised
-that output is *smaller* than what a round-tripped input file was — dropped
-`null`s are by design.
+that the output is *smaller* than what a round-tripped input file was;
+dropped `null`s are by design.
 
 One more alias, sharper than `schema`: `Relationship`. Its YAML field `from`
-is a Python keyword, so it can't be a kwarg at all — and
-`Relationship(from_=...)` does **not** error, it *silently drops the value*
+is a Python keyword, so it can't be a kwarg at all. And
+`Relationship(from_=...)` does not error; it *silently drops the value*
 (child models ignore unknown kwargs; only the root model forbids them). Build
 relationships from dicts instead:
 
@@ -173,9 +173,9 @@ rel = Relationship.model_validate({"from": ["orders.customer_id"],
 
 ## 5. Run the real script
 
-The committed script wraps steps 3–4 with the hand-curated business context
-and a round-trip sanity check (`from_string(contract.to_yaml())` — what we
-write must parse back):
+The committed script wraps steps 3 and 4 with the hand-curated business
+context and a round-trip sanity check (`from_string(contract.to_yaml())`;
+what we write must parse back):
 
 ```bash
 cd docs/tutorials/jaffle-shop
@@ -190,7 +190,7 @@ wrote contracts/customers.odcs.yaml
 ![Terminal: running generate_contract.py writes contracts/customers.odcs.yaml with 7 properties introspected from DuckDB, and the generated YAML shows the customers schema with logical and physical types](images/generate-contract.png)
 
 The Pydantic model marks *every* field optional, so "it constructed" doesn't
-prove required fields are present — finish with the two-layer validator from
+prove required fields are present. Finish with the two-layer validator from
 tutorial 1, whose JSON Schema pass does enforce them:
 
 ```bash
@@ -210,7 +210,7 @@ Makefile target.
 
 ## 6. Read a `ValidationError` like a local
 
-When parsing fails, Pydantic tells you exactly where and why — if you know
+When parsing fails, Pydantic tells you exactly where and why, if you know
 how to read it. Feed it a contract with two classic mistakes, a v2 field name
 and a mistyped boolean:
 
@@ -245,7 +245,7 @@ except ValidationError as e:
 
 `loc` is a path through the YAML (`schema → object 0 → property 0 →
 required`); `type` is the error class. `extra_forbidden` at the top level
-almost always means one of: a typo, a **v2 field name** (`datasetDomain`,
+almost always means one of: a typo, a v2 field name (`datasetDomain`,
 `columns`, `isNullable`, …), or a custom extension that belongs under
 `customProperties`.
 
@@ -267,4 +267,4 @@ More prompts to try against your `odcs-python`-equipped agent:
 > *"Why does `contract.schema` give me a bound method instead of my schema?"*
 
 Next: [tutorial 3](odps-yaml.md) packages both marts' contracts into a
-**data product** with ODPS.
+data product with ODPS.

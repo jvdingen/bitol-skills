@@ -1,12 +1,12 @@
 # bitol-skills
 
 Agent Skills that teach AI agents about the [Bitol](https://bitol.io/) data
-standards — **ODCS** (Open Data Contract Standard) and **ODPS** (Open Data
+standards: **ODCS** (Open Data Contract Standard) and **ODPS** (Open Data
 Product Standard).
 
 Skills are authored to the canonical [agentskills.io specification](https://agentskills.io/specification),
 so they're portable across Claude Code, the Claude Agent SDK, and any other
-framework that consumes the format. Each skill is **self-contained** — once
+framework that consumes the format. Each skill is self-contained: once
 installed, it does not fetch from the internet at runtime. The vendored
 reference material under `skills/<name>/references/` is the mechanical truth;
 the prose in `skills/<name>/SKILL.md` is the meaning layer.
@@ -15,27 +15,27 @@ the prose in `skills/<name>/SKILL.md` is the meaning layer.
 
 | Skill | What it covers | Spec versions |
 |---|---|---|
-| [`odcs-yaml`](skills/odcs-yaml/) | Open Data Contract Standard YAML format — structure, semantics, schema model, sections, version differences. | ODCS 3.0.0, 3.0.1, 3.0.2, 3.1.0 |
-| [`odps-yaml`](skills/odps-yaml/) | Open Data Product Standard YAML format — data products, input/output/management ports, the contract-reference model. | ODPS 1.0.0 |
-| [`odcs-python`](skills/odcs-python/) | The `open-data-contract-standard` PyPI package — `OpenDataContractStandard` Pydantic model, parsing, constructing, validating, the spec→pip version map. | ODCS 3.0.1, 3.0.2, 3.1.0 (via pip module) |
+| [`odcs-yaml`](skills/odcs-yaml/) | Open Data Contract Standard YAML format: structure, semantics, schema model, sections, version differences. | ODCS 3.0.0, 3.0.1, 3.0.2, 3.1.0 |
+| [`odps-yaml`](skills/odps-yaml/) | Open Data Product Standard YAML format: data products, input/output/management ports, the contract-reference model. | ODPS 1.0.0 |
+| [`odcs-python`](skills/odcs-python/) | The `open-data-contract-standard` PyPI package: `OpenDataContractStandard` Pydantic model, parsing, constructing, validating, the spec-to-pip version map. | ODCS 3.0.1, 3.0.2, 3.1.0 (via pip module) |
 
 The three skills are independently installable. `odcs-yaml` and `odcs-python`
-overlap somewhat — install both if you want full coverage of ODCS in YAML *and*
+overlap somewhat. Install both if you want full coverage of ODCS in YAML *and*
 in Python, or install just one if you only need that side.
 
 ## Tutorials
 
 Want to see the skills in action before (or after) installing them?
 [`docs/tutorials/`](docs/tutorials/) walks through all three against a real
-DuckDB database — the classic **jaffle shop** dataset: write and validate a
+DuckDB database, the classic jaffle shop dataset: write and validate a
 data contract by hand ([`odcs-yaml`](docs/tutorials/odcs-yaml.md)), generate
 one from the live catalog in Python ([`odcs-python`](docs/tutorials/odcs-python.md)),
 and package the contracts into a data product ([`odps-yaml`](docs/tutorials/odps-yaml.md)).
 
 ## Installing a skill
 
-There are two ways to install: the **Claude Code marketplace** (recommended for
-Claude Code users) or **manual copy** (works anywhere).
+There are two ways to install: the Claude Code marketplace (recommended for
+Claude Code users) or manual copy (works anywhere).
 
 ### Option 1: Claude Code marketplace
 
@@ -80,7 +80,7 @@ cp -r skills/odcs-python  ~/.claude/skills/odcs-python
 ```
 
 For other Agent SDK consumers, copy the same folder into whatever directory
-that framework reads skills from. The folder is the unit — `SKILL.md` plus its
+that framework reads skills from. The folder is the unit: `SKILL.md` plus its
 sibling `references/` subtree must move together. The `.claude-plugin/`
 subdirectory inside each skill is harmless extra metadata for non-Claude-Code
 consumers; it can be deleted if your framework objects.
@@ -89,8 +89,8 @@ To uninstall, delete the folder.
 
 ## No Python required
 
-The skills are prose plus vendored reference files — installing and using them
-requires **no Python, no uv, and no package installs**. Python only enters the
+The skills are prose plus vendored reference files. You do not need Python,
+uv, or any package installs to install and use them. Python only enters the
 picture in two optional places:
 
 - The `odcs-yaml` skill bundles a helper script
@@ -99,7 +99,7 @@ picture in two optional places:
   fallback: check the contract against the vendored JSON Schema by hand and
   say so explicitly. The skill degrades gracefully; it never fetches anything.
 - The `odcs-python` skill is *about* a Python library, so it is only useful in
-  projects that use Python — but reading the skill itself needs nothing.
+  projects that use Python. Reading the skill itself needs nothing.
 
 The repo-level tooling under `scripts/` (sync, lint, tests) is for
 *contributors to this repo* and is never needed by skill consumers.
@@ -108,9 +108,9 @@ The repo-level tooling under `scripts/` (sync, lint, tests) is for
 
 ```
 skills/<name>/
-  SKILL.md         # frontmatter + body — loaded into agent context on activation
+  SKILL.md         # frontmatter + body, loaded into agent context on activation
   sources.toml     # vendoring manifest (input to scripts/sync_specs.py)
-  references/      # vendored upstream material — loaded on demand
+  references/      # vendored upstream material, loaded on demand
   scripts/         # optional executable helpers (only odcs-yaml ships one)
   .claude-plugin/  # plugin metadata for Claude Code marketplace installs
 ```
@@ -123,11 +123,11 @@ mechanical details (full schemas, prose specs, examples, changelogs).
 
 If you're modifying or adding a skill, the workflow is documented in:
 
-- **[`CLAUDE.md`](CLAUDE.md)** — repository conventions, anti-patterns, and the
+- [`CLAUDE.md`](CLAUDE.md): repository conventions, anti-patterns, and the
   drift workflow for keeping vendored material current.
-- **[`SKILL_PLAYBOOK.md`](SKILL_PLAYBOOK.md)** — the step-by-step per-skill
+- [`SKILL_PLAYBOOK.md`](SKILL_PLAYBOOK.md): the step-by-step per-skill
   workflow for creating a new skill or updating an existing one.
-- **[`REFERENCES.md`](REFERENCES.md)** — canonical upstream URLs (the source
+- [`REFERENCES.md`](REFERENCES.md): canonical upstream URLs (the source
   of truth for Bitol and Agent SDK links).
 
 Quick commands once you have the repo cloned:
@@ -147,5 +147,5 @@ The original work in this repo (skill prose, tooling, tests) is released under
 the [MIT License](LICENSE).
 
 The vendored material under each skill's `references/` directory is *not*
-covered by that license — those files remain under their respective upstream
+covered by that license; those files remain under their respective upstream
 licenses. See the upstream repos linked in [`REFERENCES.md`](REFERENCES.md).

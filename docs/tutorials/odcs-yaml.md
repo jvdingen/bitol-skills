@@ -1,13 +1,13 @@
-# Tutorial 1 — Write a data contract for the `orders` mart (`odcs-yaml`)
+# Tutorial 1: Write a data contract for the `orders` mart (`odcs-yaml`)
 
 You built the jaffle shop database in the [setup](README.md#setup-10-minutes).
-Its most valuable table is the `orders` mart — one row per order, with the
+Its most valuable table is the `orders` mart, one row per order, with the
 paid amount pivoted per payment method. In this tutorial you put an
-**ODCS v3.1.0 data contract** on it: a YAML document that declares the mart's
-structure, quality guarantees, SLA, ownership, and where it physically lives —
+ODCS v3.1.0 data contract on it: a YAML document that declares the mart's
+structure, quality guarantees, SLA, ownership, and where it physically lives,
 and that a machine can validate.
 
-**Skill showcased**: [`odcs-yaml`](../../skills/odcs-yaml/). Install it and
+**Skill**: [`odcs-yaml`](../../skills/odcs-yaml/). Install it and
 your agent knows the spec: every field below, the version differences, the
 pitfalls, and how to validate what it writes.
 
@@ -16,10 +16,10 @@ pitfalls, and how to validate what it writes.
 live in the `odcs-yaml` skill folder).
 
 The finished contract is committed at
-[`jaffle-shop/contracts/orders.odcs.yaml`](jaffle-shop/contracts/orders.odcs.yaml) —
-diff your work against it at any point.
+[`jaffle-shop/contracts/orders.odcs.yaml`](jaffle-shop/contracts/orders.odcs.yaml).
+Diff your work against it at any point.
 
-> **🤖 Ask your agent** (with `odcs-yaml` installed):
+> **Ask your agent** (with `odcs-yaml` installed):
 > *"Write an ODCS v3.1.0 data contract for the `orders` table in
 > `docs/tutorials/jaffle-shop/jaffle_shop.duckdb`. Inspect the table first,
 > add quality rules for the primary key and the status values, and validate
@@ -55,13 +55,13 @@ DESCRIBE orders;
 
 Note what the catalog can *not* tell you: that `order_id` is the primary key,
 that `status` has exactly five legal values, that amounts are USD, that the
-mart refreshes daily. That gap — everything the consumer needs to know that
-the database doesn't enforce — is what the contract is for.
+mart refreshes daily. That gap is what the contract is for: everything the
+consumer needs to know that the database itself doesn't enforce.
 
 ## 2. Fundamentals: identity of the contract itself
 
-Create `orders.odcs.yaml` and start with who/what/which-version — metadata
-about the *contract*, not the data:
+Create `orders.odcs.yaml` and start with who, what, and which version.
+This is metadata about the *contract*, not the data:
 
 ```yaml
 apiVersion: v3.1.0        # version of the ODCS standard
@@ -83,16 +83,16 @@ description:
 
 Two things people get wrong on line one:
 
-- `apiVersion`, `kind`, `id`, `version`, and `status` are the **only required
-  fields** — `name` is optional (`id` is the identifier).
-- `description` is an **object** with `purpose` / `limitations` / `usage`
+- `apiVersion`, `kind`, `id`, `version`, and `status` are the only required
+  fields; `name` is optional (`id` is the identifier).
+- `description` is an object with `purpose` / `limitations` / `usage`
   sub-keys, not a string. `description: "One row per order"` fails validation
   (we'll prove it in step 7).
 
 ## 3. Schema: objects and properties, logical and physical
 
-ODCS v3 doesn't say "tables and columns" — it says **objects** (a structure of
-data: table, document, Kafka payload) containing **properties** (its
+ODCS v3 doesn't say "tables and columns". It says *objects* (a structure of
+data: table, document, Kafka payload) containing *properties* (its
 attributes). For our relational mart that's one object with nine properties.
 Each property carries a platform-agnostic `logicalType` *and* the
 platform-specific `physicalType` you saw in `DESCRIBE`:
@@ -136,8 +136,8 @@ schema:
       # see the finished contract for all of them.
 ```
 
-The amount properties showcase one more idea: the contract can document
-**where a value comes from**. `amount` is not stored in `raw_orders` — the
+The amount properties introduce one more idea: the contract can document
+where a value comes from. `amount` is not stored in `raw_orders`; the
 [setup SQL](jaffle-shop/setup_jaffle_shop.sql) computes it from `raw_payments`.
 Say so:
 
@@ -154,8 +154,8 @@ Say so:
 
 ## 4. Quality: promises you can execute
 
-This is where a contract earns its keep. ODCS v3.1.0 ships a small **library
-of predefined metrics** (`rowCount`, `nullValues`, `invalidValues`,
+This is where a contract earns its keep. ODCS v3.1.0 ships a small library
+of predefined metrics (`rowCount`, `nullValues`, `invalidValues`,
 `duplicateValues`, `missingValues`) plus escape hatches for raw SQL and
 vendor-specific engines. Attach rules at the property level:
 
@@ -183,7 +183,7 @@ vendor-specific engines. Attach rules at the property level:
 ```
 
 …and at the schema (object) level, where `sql` rules can express anything the
-library can't — here, that the mart reconciles with the raw payments ledger.
+library can't. Here, that the mart reconciles with the raw payments ledger.
 In `sql` rules, `{object}` and `{property}` are placeholders the quality
 engine replaces with the current table and column:
 
@@ -204,8 +204,8 @@ engine replaces with the current table and column:
         description: The mart's total amount reconciles with the raw payments ledger.
 ```
 
-These aren't decoration — each rule is a query away from being checked.
-Run the promises against the real data:
+Each rule is a query away from being checked. Run the promises against the
+real data:
 
 ```sql
 -- duckdb jaffle_shop.duckdb
@@ -219,7 +219,7 @@ SELECT ABS((SELECT SUM(amount) FROM orders)
 
 All four return `0` on the tutorial data. (In production you'd hand the
 contract to a quality engine that generates these checks from the `metric`
-fields — that's exactly what they're standardized for.)
+fields; that's exactly what they're standardized for.)
 
 ## 5. SLA and the physical binding
 
@@ -239,8 +239,8 @@ slaProperties:
 ```
 
 Then bind the logical schema to physical infrastructure. The schema section
-never mentions DuckDB — the same contract could be served from Postgres
-tomorrow — the `servers` section is the only place platform specifics live.
+never mentions DuckDB (the same contract could be served from Postgres
+tomorrow); the `servers` section is the only place platform specifics live.
 ODCS has a first-class `duckdb` server type:
 
 ```yaml
@@ -253,8 +253,8 @@ servers:
     description: Local DuckDB file built by setup_jaffle_shop.sql.
 ```
 
-Note what's *absent*: credentials. Since v3.0.0 they're deliberately excluded —
-a contract should be safe to publish.
+Note what's *absent*: credentials. Since v3.0.0 they're deliberately
+excluded, because a contract should be safe to publish.
 
 ## 6. Ownership: team, support, price
 
@@ -283,7 +283,7 @@ Watch the `team` shape: v3.0.x declared it as a bare array of members; v3.1.0
 made it an object (the array still parses but is deprecated, removed in v4).
 New contracts should always use the object form.
 
-## 7. Validate — and watch it fail first
+## 7. Validate, and watch it fail first
 
 The `odcs-yaml` skill ships a validator that checks a contract two ways: the
 Bitol Pydantic model (strict types, unknown-field rejection) and the vendored
@@ -300,7 +300,7 @@ uv run --with open-data-contract-standard \
 OK (pydantic + jsonschema against v3.1.0): docs/tutorials/jaffle-shop/contracts/orders.odcs.yaml
 ```
 
-Now earn some trust in that OK — break the contract both ways and watch each
+Now earn some trust in that OK: break the contract both ways and watch each
 layer catch it. Set `description:` to a plain string (the classic pitfall from
 step 2) and the *Pydantic model* rejects it:
 
@@ -310,8 +310,9 @@ description
   Input should be a valid dictionary or instance of Description [type=model_type, input_value='One row per order.', input_type=str]
 ```
 
-Delete the `status:` line instead and it's the *JSON Schema* that objects —
-the Pydantic model can't catch this one, because it marks every field optional:
+Delete the `status:` line instead and it's the *JSON Schema* that objects.
+The Pydantic model can't catch this one, because it marks every field
+optional:
 
 ```text
 FAIL (jsonschema): 'status' is a required property
@@ -320,14 +321,14 @@ FAIL (jsonschema): 'status' is a required property
 ![Terminal: validating orders.odcs.yaml succeeds with OK (pydantic + jsonschema against v3.1.0); after removing the status field the same command fails with FAIL (jsonschema): 'status' is a required property](images/validate-orders-contract.png)
 
 That two-layer behavior is why the skill insists agents validate every
-contract they generate — each check catches what the other can't.
+contract they generate: each check catches what the other can't.
 
 ## 8. Going further: multiple objects and relationships
 
-One contract can cover several objects. The raw layer's contract —
-[`jaffle-shop-raw.odcs.yaml`](jaffle-shop/contracts/jaffle-shop-raw.odcs.yaml),
-which tutorial 3 uses as the data product's input — describes all three raw
-tables in a single document and wires them together with **relationships**,
+One contract can cover several objects. The raw layer's contract
+([`jaffle-shop-raw.odcs.yaml`](jaffle-shop/contracts/jaffle-shop-raw.odcs.yaml),
+which tutorial 3 uses as the data product's input) describes all three raw
+tables in a single document and wires them together with relationships,
 the foreign-key feature added in v3.1.0:
 
 ```yaml
@@ -341,19 +342,19 @@ the foreign-key feature added in v3.1.0:
 ```
 
 At property level you only give `to` (dot shorthand: `object.property`).
-Schema-level relationships — needed for composite keys — take explicit `from`
+Schema-level relationships, needed for composite keys, take explicit `from`
 and `to` arrays.
 
 ## Recap
 
 You wrote a contract that declares identity, schema (logical + physical),
 executable quality promises, an SLA, a credential-free DuckDB binding, and
-ownership — and machine-validated it, including two instructive failures.
+ownership. Then you machine-validated it, including two instructive failures.
 
 More prompts to try against your `odcs-yaml`-equipped agent:
 
 > *"Add a quality rule to orders.odcs.yaml: no order_date may be in the future."*
-> *(expect a `sql` rule — the metric library has no date comparisons)*
+> *(expect a `sql` rule; the metric library has no date comparisons)*
 >
 > *"Our BI tool needs the contract at v3.0.2. What breaks if we downgrade?"*
 > *(expect: relationships are v3.1.0-only, team must revert to the array form, …)*
@@ -361,4 +362,4 @@ More prompts to try against your `odcs-yaml`-equipped agent:
 > *"Review orders.odcs.yaml like a data consumer would and tell me what's missing."*
 
 Next: [tutorial 2](odcs-python.md) generates the `customers` contract
-*programmatically* — straight from DuckDB's catalog.
+*programmatically*, straight from DuckDB's catalog.
