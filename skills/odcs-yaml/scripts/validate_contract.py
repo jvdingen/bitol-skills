@@ -21,12 +21,17 @@ from pathlib import Path
 SKILL_ROOT = Path(__file__).resolve().parent.parent
 SCHEMAS_DIR = SKILL_ROOT / "references" / "schemas"
 
-SCHEMA_FILES = {
-    "v3.0.0": "odcs-json-schema-v3.0.0.json",
-    "v3.0.1": "odcs-json-schema-v3.0.1.json",
-    "v3.0.2": "odcs-json-schema-v3.0.2.json",
-    "v3.1.0": "odcs-json-schema-v3.1.0.json",
-}
+
+def _discover_schemas() -> dict[str, Path]:
+    """Map apiVersion (e.g. 'v3.1.0') to its vendored schema file.
+
+    Discovered from references/schemas/ rather than hardcoded, so vendoring a
+    new spec version's schema automatically extends what this script accepts.
+    """
+    return {
+        p.stem.removeprefix("odcs-json-schema-"): p
+        for p in sorted(SCHEMAS_DIR.glob("odcs-json-schema-v*.json"))
+    }
 
 NOT_VALIDATED_MSG = (
     "WARNING: contract was NOT validated. "
@@ -64,18 +69,18 @@ def _try_pydantic(path: Path) -> bool | None:
 
 
 def _validate_jsonschema(contract: dict, api_version: str) -> bool:
-    schema_file = SCHEMA_FILES.get(api_version)
-    if not schema_file:
-        print(
-            f"FAIL: unknown apiVersion '{api_version}'. "
-            f"Supported: {', '.join(sorted(SCHEMA_FILES))}",
-            file=sys.stderr,
-        )
+    schemas = _discover_schemas()
+    if not schemas:
+        print(f"FAIL: no vendored schemas found in {SCHEMAS_DIR}", file=sys.stderr)
         return False
 
-    schema_path = SCHEMAS_DIR / schema_file
-    if not schema_path.exists():
-        print(f"FAIL: schema file not found at {schema_path}", file=sys.stderr)
+    schema_path = schemas.get(api_version)
+    if not schema_path:
+        print(
+            f"FAIL: unknown apiVersion '{api_version}'. "
+            f"Supported: {', '.join(sorted(schemas))}",
+            file=sys.stderr,
+        )
         return False
 
     try:
@@ -118,9 +123,16 @@ def main() -> int:
 
     # Fall back to JSON Schema
     contract = _load_yaml(path)
+    if not isinstance(contract, dict):
+        print(
+            "FAIL: contract is not a YAML mapping at the root "
+            "(empty file, a list, or a scalar)",
+            file=sys.stderr,
+        )
+        return 1
     api_version = contract.get("apiVersion", "")
-    if not api_version:
-        print("FAIL: contract has no 'apiVersion' field", file=sys.stderr)
+    if not isinstance(api_version, str) or not api_version:
+        print("FAIL: contract has no 'apiVersion' string field", file=sys.stderr)
         return 1
 
     if _validate_jsonschema(contract, api_version):

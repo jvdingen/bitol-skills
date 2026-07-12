@@ -67,6 +67,14 @@ def sync_skill(skill_dir: Path, apply: bool) -> tuple[int, int, int]:
             errors += 1
             continue
 
+        # Vendored material must land inside references/ — anything else would
+        # either escape the skill or clobber the hand-written layer.
+        refs_root = (skill_dir / "references").resolve()
+        if not dest.resolve().is_relative_to(refs_root):
+            print(f"  ERROR  dest {src['dest']!r} must be inside references/")
+            errors += 1
+            continue
+
         rel = dest.relative_to(skill_dir)
         try:
             upstream = fetch(repo, ref, src_path)

@@ -38,11 +38,18 @@ metadata:
 """
 
 
-def test_real_odcs_yaml_validates_clean():
-    """The actual odcs-yaml skill must validate cleanly (no hard errors)."""
-    skill = REPO_ROOT / "skills" / "odcs-yaml"
-    errors = [e for e in validate_skill(skill) if not e.startswith("WARN")]
-    assert errors == [], f"odcs-yaml should validate cleanly; got: {errors}"
+REAL_SKILLS = sorted((REPO_ROOT / "skills").glob("*/SKILL.md"))
+
+
+def test_real_skills_are_discovered():
+    assert REAL_SKILLS, "no skills found under skills/"
+
+
+@pytest.mark.parametrize("skill_md", REAL_SKILLS, ids=lambda p: p.parent.name)
+def test_real_skills_validate_clean(skill_md: Path):
+    """Every skill shipped by this repo must validate cleanly (no hard errors)."""
+    errors = [e for e in validate_skill(skill_md.parent) if not e.startswith("WARN")]
+    assert errors == [], f"{skill_md.parent.name} should validate cleanly; got: {errors}"
 
 
 def test_minimal_valid_skill_passes(tmp_path):
@@ -140,6 +147,75 @@ def test_singular_reference_dir_fails(tmp_path):
     (skill / "reference").mkdir()
     errors = validate_skill(skill)
     assert any("plural" in e for e in errors)
+
+
+def test_crlf_frontmatter_parses(tmp_path):
+    """SKILL.md files authored on Windows (CRLF) must still parse."""
+    skill = tmp_path / "test-skill"
+    skill.mkdir()
+    content = f"---\n{VALID_FM.strip()}\n---\n# Body\n".replace("\n", "\r\n")
+    (skill / "SKILL.md").write_bytes(content.encode("utf-8"))
+    errors = [e for e in validate_skill(skill) if not e.startswith("WARN")]
+    assert errors == []
+
+
+def test_utf8_bom_frontmatter_parses(tmp_path):
+    """A UTF-8 BOM must not break frontmatter detection."""
+    skill = tmp_path / "test-skill"
+    skill.mkdir()
+    content = f"---\n{VALID_FM.strip()}\n---\n# Body\n"
+    (skill / "SKILL.md").write_bytes(b"\xef\xbb\xbf" + content.encode("utf-8"))
+    errors = [e for e in validate_skill(skill) if not e.startswith("WARN")]
+    assert errors == []
+
+
+def test_broken_relative_link_fails(tmp_path):
+    body = "# Body\nSee [the schema](references/missing.json).\n"
+    skill = make_skill(tmp_path, "test-skill", VALID_FM.strip(), body=body)
+    errors = validate_skill(skill)
+    assert any("missing file" in e for e in errors)
+
+
+def test_link_escaping_skill_dir_fails(tmp_path):
+    body = "# Body\nSee [outside](../elsewhere.md).\n"
+    (tmp_path / "elsewhere.md").write_text("outside the skill\n")
+    skill = make_skill(tmp_path, "test-skill", VALID_FM.strip(), body=body)
+    errors = validate_skill(skill)
+    assert any("escapes the skill directory" in e for e in errors)
+
+
+def test_valid_relative_link_passes(tmp_path):
+    body = "# Body\nSee [the schema](references/schema.json).\n"
+    skill = make_skill(tmp_path, "test-skill", VALID_FM.strip(), body=body, make_refs=True)
+    (skill / "references" / "schema.json").write_text("{}\n")
+    errors = [e for e in validate_skill(skill) if not e.startswith("WARN")]
+    assert errors == []
+
+
+def test_external_and_anchor_links_are_ignored(tmp_path):
+    body = (
+        "# Body\n"
+        "[web](https://example.com/page) [mail](mailto:a@b.c) [anchor](#section)\n"
+    )
+    skill = make_skill(tmp_path, "test-skill", VALID_FM.strip(), body=body)
+    errors = [e for e in validate_skill(skill) if not e.startswith("WARN")]
+    assert errors == []
+
+
+def test_plugin_manifest_name_mismatch_fails(tmp_path):
+    skill = make_skill(tmp_path, "test-skill", VALID_FM.strip())
+    (skill / ".claude-plugin").mkdir()
+    (skill / ".claude-plugin" / "plugin.json").write_text('{"name": "other-name"}\n')
+    errors = validate_skill(skill)
+    assert any("does not match skill directory" in e for e in errors)
+
+
+def test_plugin_manifest_invalid_json_fails(tmp_path):
+    skill = make_skill(tmp_path, "test-skill", VALID_FM.strip())
+    (skill / ".claude-plugin").mkdir()
+    (skill / ".claude-plugin" / "plugin.json").write_text("{not json")
+    errors = validate_skill(skill)
+    assert any("not valid JSON" in e for e in errors)
 
 
 def test_long_body_warns(tmp_path):

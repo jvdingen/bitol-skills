@@ -12,6 +12,10 @@ Project rules:
     - metadata.spec_versions present, list of semver strings (X.Y.Z)
     - if sources.toml exists, references/ must exist
     - directory is references/ (plural), never reference/
+    - every relative link in the SKILL.md body resolves to a file inside the
+      skill directory (skills must be installable standalone)
+    - if .claude-plugin/plugin.json exists, it is valid JSON and its name
+      matches the skill directory
     - SKILL.md body should be < 500 lines (warning, not error)
 
 Usage:
@@ -25,6 +29,7 @@ Exit codes:
 """
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -41,6 +46,7 @@ ALLOWED_FRONTMATTER_FIELDS = {
 }
 NAME_CHARSET_RE = re.compile(r"^[a-z0-9-]+$")
 SEMVER_RE = re.compile(r"^\d+\.\d+\.\d+$")
+MD_LINK_RE = re.compile(r"\]\(([^)]+)\)")
 MAX_NAME = 64
 MAX_DESCRIPTION = 1024
 MAX_COMPATIBILITY = 500
@@ -51,7 +57,9 @@ def parse_frontmatter(skill_md: Path) -> tuple[dict | None, str, list[str]]:
     """Returns (frontmatter, body, errors). frontmatter is None on error."""
     if not skill_md.exists():
         return (None, "", [f"missing SKILL.md at {skill_md}"])
-    text = skill_md.read_text()
+    # utf-8-sig strips a BOM if present; CRLF is normalized so the frontmatter
+    # delimiters match on files authored/copied on Windows.
+    text = skill_md.read_text(encoding="utf-8-sig").replace("\r\n", "\n")
     m = re.match(r"^---\n(.*?)\n---\n?(.*)\Z", text, re.DOTALL)
     if not m:
         return (None, "", ["SKILL.md missing or malformed YAML frontmatter (--- ... ---)"])
@@ -142,6 +150,60 @@ def validate_layout(skill_dir: Path) -> list[str]:
     return errors
 
 
+def validate_links(skill_dir: Path, body: str) -> list[str]:
+    """Project rule: relative links in the body must resolve inside the skill.
+
+    The skill folder is the unit of installation — a link that escapes it or
+    points at a missing file breaks the skill once copied elsewhere.
+    """
+    errors: list[str] = []
+    root = skill_dir.resolve()
+    seen: set[str] = set()
+    for m in MD_LINK_RE.finditer(body):
+        target = m.group(1).strip()
+        if not target or target in seen:
+            continue
+        seen.add(target)
+        if target.startswith("#") or target.startswith("mailto:") or "://" in target:
+            continue
+        path_part = target.split("#", 1)[0]
+        if not path_part:
+            continue
+        if path_part.startswith("/"):
+            errors.append(
+                f"link {target!r} uses an absolute path; skills must be self-contained"
+            )
+            continue
+        resolved = (skill_dir / path_part).resolve()
+        if not resolved.is_relative_to(root):
+            errors.append(
+                f"link {target!r} escapes the skill directory; skills must be self-contained"
+            )
+        elif not resolved.exists():
+            errors.append(f"link {target!r} points to a missing file")
+    return errors
+
+
+def validate_plugin_manifest(skill_dir: Path) -> list[str]:
+    """Project rule: an optional .claude-plugin/plugin.json must be coherent."""
+    manifest = skill_dir / ".claude-plugin" / "plugin.json"
+    if not manifest.exists():
+        return []
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError) as e:
+        return [f".claude-plugin/plugin.json is not valid JSON: {e}"]
+    if not isinstance(data, dict):
+        return [".claude-plugin/plugin.json must be a JSON object"]
+    name = data.get("name")
+    if name != skill_dir.name:
+        return [
+            f".claude-plugin/plugin.json name {name!r} does not match "
+            f"skill directory {skill_dir.name!r}"
+        ]
+    return []
+
+
 def validate_body_length(body: str) -> list[str]:
     n = body.count("\n")
     if n > WARN_BODY_LINES:
@@ -161,6 +223,8 @@ def validate_skill(skill_dir: Path) -> list[str]:
     errors += validate_compatibility(fm)
     errors += validate_spec_versions(fm)
     errors += validate_layout(skill_dir)
+    errors += validate_links(skill_dir, body)
+    errors += validate_plugin_manifest(skill_dir)
     errors += validate_body_length(body)
     return errors
 

@@ -31,13 +31,17 @@ Claude Code users) or **manual copy** (works anywhere).
 ### Option 1: Claude Code marketplace
 
 This repo doubles as a Claude Code plugin marketplace. Each skill ships as an
-independently installable plugin.
+independently installable plugin, and there is a `bitol` bundle plugin that
+ships all three at once.
 
 ```bash
 # Add the marketplace once
 /plugin marketplace add jvdingen/bitol-skills
 
-# Install whichever skills you want
+# Either install everything in one go...
+/plugin install bitol@bitol-skills
+
+# ...or install whichever skills you want individually
 /plugin install odcs-yaml@bitol-skills
 /plugin install odps-yaml@bitol-skills
 /plugin install odcs-python@bitol-skills
@@ -74,6 +78,23 @@ consumers; it can be deleted if your framework objects.
 
 To uninstall, delete the folder.
 
+## No Python required
+
+The skills are prose plus vendored reference files — installing and using them
+requires **no Python, no uv, and no package installs**. Python only enters the
+picture in two optional places:
+
+- The `odcs-yaml` skill bundles a helper script
+  (`scripts/validate_contract.py`) for machine-validating generated contracts.
+  If Python isn't available, the skill's `SKILL.md` documents a manual
+  fallback: check the contract against the vendored JSON Schema by hand and
+  say so explicitly. The skill degrades gracefully; it never fetches anything.
+- The `odcs-python` skill is *about* a Python library, so it is only useful in
+  projects that use Python — but reading the skill itself needs nothing.
+
+The repo-level tooling under `scripts/` (sync, lint, tests) is for
+*contributors to this repo* and is never needed by skill consumers.
+
 ## What's in each skill folder
 
 ```
@@ -81,6 +102,8 @@ skills/<name>/
   SKILL.md         # frontmatter + body — loaded into agent context on activation
   sources.toml     # vendoring manifest (input to scripts/sync_specs.py)
   references/      # vendored upstream material — loaded on demand
+  scripts/         # optional executable helpers (only odcs-yaml ships one)
+  .claude-plugin/  # plugin metadata for Claude Code marketplace installs
 ```
 
 `SKILL.md` is a few hundred lines of hand-written prose explaining how to

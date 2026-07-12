@@ -1,0 +1,10 @@
+{
+  "name": "bitol",
+  "description": "All Bitol data-standard skills in one bundle: odcs-yaml, odps-yaml, and odcs-python.",
+  "license": "MIT",
+  "skills": [
+    "./skills/odcs-yaml",
+    "./skills/odps-yaml",
+    "./skills/odcs-python"
+  ]
+}

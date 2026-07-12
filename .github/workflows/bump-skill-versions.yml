@@ -41,7 +41,8 @@ jobs:
 
           changed = False
           for plugin in data['plugins']:
-              if plugin['name'] in skills:
+              # the 'bitol' bundle ships every skill, so any skill change bumps it too
+              if plugin['name'] in skills or (skills and plugin['name'] == 'bitol'):
                   old = plugin['version']
                   parts = old.split('.')
                   if len(parts) != 3 or not parts[2].isdigit():
