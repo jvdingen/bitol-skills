@@ -23,6 +23,15 @@ The three skills are independently installable. `odcs-yaml` and `odcs-python`
 overlap somewhat — install both if you want full coverage of ODCS in YAML *and*
 in Python, or install just one if you only need that side.
 
+## Tutorials
+
+Want to see the skills in action before (or after) installing them?
+[`docs/tutorials/`](docs/tutorials/) walks through all three against a real
+DuckDB database — the classic **jaffle shop** dataset: write and validate a
+data contract by hand ([`odcs-yaml`](docs/tutorials/odcs-yaml.md)), generate
+one from the live catalog in Python ([`odcs-python`](docs/tutorials/odcs-python.md)),
+and package the contracts into a data product ([`odps-yaml`](docs/tutorials/odps-yaml.md)).
+
 ## Installing a skill
 
 There are two ways to install: the **Claude Code marketplace** (recommended for

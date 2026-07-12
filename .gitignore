@@ -30,3 +30,7 @@ Thumbs.db
 
 # Drift report written by .github/workflows/drift.yml when run locally
 drift-report.txt
+
+# DuckDB database built by docs/tutorials/jaffle-shop/setup_jaffle_shop.sql
+*.duckdb
+*.duckdb.wal

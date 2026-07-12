@@ -1,0 +1,93 @@
+# Data product descriptor for the jaffle shop.
+# Built step by step in docs/tutorials/odps-yaml.md.
+#
+# The product is a thin wrapper: schema, quality, and SLAs live in the ODCS
+# contracts that the ports reference by contractId (files in this directory).
+
+apiVersion: v1.0.0
+kind: DataProduct
+id: 72b5c5fd-c7ee-4124-874f-c40626a306db
+name: Jaffle Shop
+version: 1.0.0
+status: active
+
+domain: jaffle-shop
+tenant: JaffleShopInc
+
+description:
+  purpose: Customer and order analytics for the jaffle shop, built from the shop's operational database.
+  limitations: Batch product refreshed daily; no intra-day freshness. Amounts in USD only.
+  usage: Consume the output ports via the linked data contracts. Start with `orders` for revenue questions and `customers` for retention questions.
+
+tags:
+  - jaffle-shop
+  - analytics
+
+# What the product needs from upstream: the raw replication of the shop app
+# database, described by one ODCS contract covering all three raw tables.
+inputPorts:
+  - name: jaffle-shop-raw
+    version: 1.0.0
+    contractId: 8c45d6b0-2a11-44c1-8fa2-5213e3472920  # contracts/jaffle-shop-raw.odcs.yaml
+    # NB: input ports have no `description` field in ODPS v1.0.0 — that is an
+    # output-port-only field. What the port carries is described by its contract.
+    tags:
+      - raw
+
+# What the product promises to consumers: the two marts, each with its own
+# contract. inputContracts captures lineage back to the raw contract.
+outputPorts:
+  - name: orders
+    description: One row per order with amounts pivoted per payment method.
+    type: tables
+    version: 1.0.0
+    contractId: 8f8e7b5a-5fd8-4d35-bd8e-1177136c034b  # contracts/orders.odcs.yaml
+    inputContracts:
+      - id: 8c45d6b0-2a11-44c1-8fa2-5213e3472920
+        version: 1.0.0
+  - name: customers
+    description: One row per customer with order history rolled up.
+    type: tables
+    version: 1.0.0
+    contractId: 7fb49248-5e36-486d-a110-d7edcf2b2e84  # contracts/customers.odcs.yaml
+    inputContracts:
+      - id: 8c45d6b0-2a11-44c1-8fa2-5213e3472920
+        version: 1.0.0
+
+managementPorts:
+  - name: mart-freshness-metrics
+    content: observability
+    type: rest
+    url: https://data.jaffleshop.example/products/jaffle-shop/metrics
+    description: Freshness and quality-check results for both marts.
+
+support:
+  - channel: "#jaffle-shop-data"
+    tool: slack
+    scope: interactive
+    url: https://jaffleshop.example.slack.com/archives/C000JAFFLE
+  - channel: jaffle-data-help
+    tool: email
+    scope: issues
+    url: mailto:jaffle-data-help@jaffleshop.example
+
+team:
+  name: jaffle-analytics
+  description: Analytics engineering team owning the jaffle shop marts.
+  members:
+    - username: alice@jaffleshop.example
+      name: Alice Ordway
+      role: owner
+      description: Data product owner.
+      dateIn: "2018-01-01"
+    - username: bob@jaffleshop.example
+      name: Bob Cratchit
+      role: data engineer
+      description: Maintains the payment pivot transformation.
+      dateIn: "2018-02-01"
+
+customProperties:
+  - property: sourceSystem
+    value: jaffle-shop-app
+
+productCreatedTs: "2018-01-01T09:00:00Z"

@@ -166,7 +166,7 @@ schema_: list[SchemaObject] | None = pyd.Field(default=None, alias="schema")
 
 What this means in practice:
 - **When parsing YAML**: use `schema:` in the YAML (the alias). The model accepts it.
-- **When constructing in Python**: pass `schema_=...` as the kwarg, *not* `schema=...`. Or use `OpenDataContractStandard.model_validate({"schema": [...]})` to pass the alias form.
+- **When constructing in Python**: pass `schema=...` (the alias) as the kwarg. `schema_=...` raises `ValidationError` (`extra_forbidden`): no model sets `populate_by_name`, so constructors only accept the alias, and the root model's `extra='forbid'` rejects the field name. `OpenDataContractStandard.model_validate({"schema": [...]})` works too. `Server(schema=...)` behaves the same way. The dangerous one is `Relationship`: its alias `from` is a Python keyword, so it cannot be a kwarg at all, and `Relationship(from_=...)` does **not** error — child models default to `extra='ignore'`, so the value is *silently dropped* (`from_` stays `None`). Build schema-level relationships with `Relationship.model_validate({"from": ..., "to": ...})`.
 - **When reading the loaded model**: access `contract.schema_`, *not* `contract.schema`.
 - **When serializing**: `to_yaml()` already passes `by_alias=True`, so `schema_` becomes `schema:` in the output. You don't need to do anything.
 
@@ -245,7 +245,7 @@ Just construct it: `OpenDataContractStandard.from_file(path)`. If it raises `pyd
 `OpenDataContractStandard.json_schema()` — returns it as a string. `json.loads(...)` if you want a dict. The vendored copy is at [`python/schema.json`](references/python/schema.json).
 
 **"Why does my `schema:` field show up as `schema_` in Python?"**
-Because `schema` is a Pydantic v1 builtin method. The field uses an alias. Use `schema_` in Python and `schema:` in YAML; `to_yaml()` handles the conversion automatically via `by_alias=True`.
+Because `schema` is a Pydantic v1 builtin method. The field uses an alias. *Read* it as `contract.schema_`, but *construct* with the alias (`OpenDataContractStandard(schema=[...])`) — the field name is rejected as a kwarg because `populate_by_name` is not set. `to_yaml()` emits `schema:` automatically via `by_alias=True`.
 
 **"Can I use this to migrate v2 contracts to v3?"**
 No. The lib only supports v3. v2 fields will trip `extra='forbid'`. Migration is a manual exercise (or a job for a separate tool).

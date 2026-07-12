@@ -1,0 +1,160 @@
+# Data contract for the jaffle shop *raw* layer — the three tables ingested
+# as-is from the shop's application database. One contract, three schema
+# objects, wired together with v3.1.0 relationships (foreign keys).
+#
+# Referenced as the input contract of the data product in
+# docs/tutorials/odps-yaml.md; the relationships section is discussed at the
+# end of docs/tutorials/odcs-yaml.md.
+
+apiVersion: v3.1.0
+kind: DataContract
+id: 8c45d6b0-2a11-44c1-8fa2-5213e3472920
+name: jaffle_shop_raw
+version: 1.0.0
+status: active
+
+domain: jaffle-shop
+dataProduct: jaffle_shop
+tenant: JaffleShopInc
+
+description:
+  purpose: Raw operational tables (customers, orders, payments) replicated daily from the jaffle shop app database.
+  limitations: Untransformed source data. Payment amounts are integer cents, names are single-initial anonymized, no history/SCD tracking.
+  usage: Input for the jaffle_shop marts. Not intended for direct consumption by analysts.
+
+tags:
+  - jaffle-shop
+  - raw
+
+schema:
+  - name: raw_customers
+    physicalName: raw_customers
+    physicalType: table
+    description: One row per registered customer.
+    properties:
+      - name: id
+        logicalType: integer
+        physicalType: INTEGER
+        description: Customer primary key.
+        primaryKey: true
+        primaryKeyPosition: 1
+        required: true
+        unique: true
+      - name: first_name
+        logicalType: string
+        physicalType: VARCHAR
+        description: Customer first name.
+        required: true
+      - name: last_name
+        logicalType: string
+        physicalType: VARCHAR
+        description: Customer last initial (anonymized, e.g. "P.").
+        required: true
+
+  - name: raw_orders
+    physicalName: raw_orders
+    physicalType: table
+    description: One row per order placed in the shop.
+    properties:
+      - name: id
+        logicalType: integer
+        physicalType: INTEGER
+        description: Order primary key.
+        primaryKey: true
+        primaryKeyPosition: 1
+        required: true
+        unique: true
+      - name: user_id
+        logicalType: integer
+        physicalType: INTEGER
+        description: The customer who placed the order.
+        required: true
+        # Property-level relationship: `from` is implicit (this property).
+        relationships:
+          - to: raw_customers.id
+            type: foreignKey
+      - name: order_date
+        logicalType: date
+        physicalType: DATE
+        description: Calendar date the order was placed.
+        required: true
+      - name: status
+        logicalType: string
+        physicalType: VARCHAR
+        description: Raw lifecycle status as emitted by the shop app.
+        required: true
+
+  - name: raw_payments
+    physicalName: raw_payments
+    physicalType: table
+    description: One row per payment; an order may be paid with several methods.
+    properties:
+      - name: id
+        logicalType: integer
+        physicalType: INTEGER
+        description: Payment primary key.
+        primaryKey: true
+        primaryKeyPosition: 1
+        required: true
+        unique: true
+      - name: order_id
+        logicalType: integer
+        physicalType: INTEGER
+        description: The order this payment belongs to.
+        required: true
+        relationships:
+          - to: raw_orders.id
+            type: foreignKey
+      - name: payment_method
+        logicalType: string
+        physicalType: VARCHAR
+        description: One of credit_card, coupon, bank_transfer, gift_card.
+        required: true
+        quality:
+          - id: payment_method_valid_values
+            metric: invalidValues
+            arguments:
+              validValues:
+                - credit_card
+                - coupon
+                - bank_transfer
+                - gift_card
+            mustBe: 0
+      - name: amount
+        logicalType: integer
+        physicalType: INTEGER
+        description: Payment amount in integer cents (1700 = $17.00).
+        required: true
+
+slaProperties:
+  - property: frequency
+    value: 1
+    unit: d
+    element: raw_orders.order_date
+
+servers:
+  - server: local-duckdb
+    type: duckdb
+    environment: dev
+    database: jaffle_shop.duckdb
+    schema: main
+    description: Local DuckDB file built by setup_jaffle_shop.sql.
+
+team:
+  name: jaffle-platform
+  description: Platform team owning ingestion from the shop app database.
+  members:
+    - username: ingrid@jaffleshop.example
+      name: Ingrid Gestion
+      role: owner
+      description: Owns the replication pipeline.
+
+support:
+  - channel: "#jaffle-shop-platform"
+    tool: slack
+    scope: interactive
+    url: https://jaffleshop.example.slack.com/archives/C000PLATFRM
+
+customProperties:
+  - property: sourceSystem
+    value: jaffle-shop-app
