@@ -15,7 +15,7 @@ jobs:
     # skip commits made by this workflow
     if: github.event.head_commit.author.name != 'github-actions[bot]'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 2
 
