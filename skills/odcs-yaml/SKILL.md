@@ -142,13 +142,28 @@ Use the `customProperties` mechanism, available at most levels (top-level, schem
 
 After generating or substantially editing an ODCS YAML for a user, **validate it before handing it back**. Don't return a contract you haven't checked.
 
-This skill bundles a validation script at [`scripts/validate_contract.py`](scripts/validate_contract.py). Run it against any contract file:
+This skill bundles a validation script at [`scripts/validate_contract.py`](scripts/validate_contract.py). It locates the vendored schemas relative to its own location, so it works from any working directory — invoke it via its path inside this skill's folder:
 
 ```bash
-uv run --with pyyaml --with jsonschema scripts/validate_contract.py contract.odcs.yaml
+# recommended — fetches the Bitol Pydantic model too, so new module releases
+# (tracking new spec versions) are picked up automatically:
+uv run --with open-data-contract-standard --with pyyaml --with jsonschema \
+    <skill-dir>/scripts/validate_contract.py contract.odcs.yaml
+
+# lighter — JSON Schema validation only, against the vendored schemas:
+uv run --with pyyaml --with jsonschema <skill-dir>/scripts/validate_contract.py contract.odcs.yaml
+
+# or with plain python3, if the dependencies are already installed:
+python3 <skill-dir>/scripts/validate_contract.py contract.odcs.yaml
 ```
 
-The script uses the Bitol Pydantic model (`open-data-contract-standard`) if already installed, otherwise falls back to JSON Schema validation against the vendored schemas in [`references/schemas/`](references/schemas/). Exit codes: **0** = valid, **1** = invalid (error printed to stderr), **3** = validation could not run (missing dependencies). If the exit code is 3, **tell the user explicitly that the contract was not validated** and show the install instructions from the error output.
+The script runs two complementary checks. JSON Schema validation against the vendored schemas in [`references/schemas/`](references/schemas/) always runs and is authoritative for required fields — it supports every `apiVersion` that has a schema file there. The Bitol Pydantic model (`open-data-contract-standard`) additionally runs when importable, adding type strictness and unknown-field rejection; the schema check is still needed alongside it because the model marks every field optional and cannot catch a missing `version` or `status`. Version skew is handled: a pydantic rejection is only final when the installed module targets the contract's spec major.minor; for contracts from another spec line the script defers to the version-matched vendored schema and prints a note. Exit codes: **0** = valid, **1** = invalid (error printed to stderr), **3** = validation could not run (missing dependencies). If the exit code is 3, **tell the user explicitly that the contract was not validated** and show the install instructions from the error output.
+
+**If Python is not available**, the skill still works — the script is an optional helper, not a requirement. Fall back to a manual check:
+
+1. Open the vendored JSON Schema matching the contract's `apiVersion` in [`references/schemas/`](references/schemas/).
+2. Check the contract against it yourself: required fields present, enum values legal, field types correct, no unknown keys in sections that forbid them.
+3. Tell the user explicitly that the contract was checked manually against the vendored schema, **not machine-validated**.
 
 **Caveat**: the JSON Schema fallback is a *companion* to the spec, not authoritative (see Pitfalls). A contract that passes the schema check may still violate the prose spec in edge cases. The Pydantic path is stricter.
 

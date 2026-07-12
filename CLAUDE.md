@@ -20,9 +20,13 @@ specs evolve.
 skills/                    # one folder per skill — each is independently installable
   <skill-name>/
     SKILL.md               # frontmatter + body (the meaning layer)
+    sources.toml           # vendoring manifest (input to scripts/sync_specs.py)
     references/            # vendored upstream material (the mechanical truth)
     scripts/               # optional, if the skill ships executable helpers
     assets/                # optional, templates / examples / data files
+    .claude-plugin/        # plugin.json — marketplace metadata for this skill
+.claude-plugin/            # marketplace.json (this repo IS a marketplace) +
+                           # plugin.json (the 'bitol' bundle plugin shipping all skills)
 scripts/                   # repo tooling, NOT skill scripts
   sync_specs.py            # diff vendored references against upstream
   validate_skill.py        # lint a skill against the agentskills.io spec
@@ -57,6 +61,16 @@ for the step-by-step workflow.
   them at discovery time.
 - Use `compatibility` only when a skill genuinely needs it (e.g. the `odcs-python` skill should
   declare its Python version requirement). Most skills do not need this field.
+- **Self-contained links**: every relative link in the `SKILL.md` body must resolve to a file
+  inside the skill folder. Links that escape the folder (`../`, absolute paths) or point to
+  missing files are hard validator errors — the skill folder is the unit of installation.
+- **No Python required at runtime**: bundled skill scripts are optional helpers. If a skill
+  ships one, its `SKILL.md` must document a graceful fallback for environments without Python,
+  and the script must locate its data relative to `__file__` (never the working directory).
+- **Plugin metadata**: each skill carries `.claude-plugin/plugin.json` whose `name` matches
+  the directory (validator-enforced). A new skill must also be added to the root
+  `.claude-plugin/marketplace.json` and to the `skills` list of the root
+  `.claude-plugin/plugin.json` (the `bitol` bundle).
 
 ## Content model: vendored truth + hand-written meaning
 
@@ -92,11 +106,18 @@ uv sync                                            # install Python deps
 uv run pytest                                      # run all tests
 uv run scripts/sync_specs.py                       # diff vendored refs vs upstream, print report
 uv run scripts/sync_specs.py --apply               # write upstream changes into references/
+uv run scripts/check_releases.py skills            # any upstream release newer than pinned refs?
 uv run scripts/validate_skill.py skills/<name>     # lint a single skill
 uv run scripts/validate_skill.py skills            # lint all skills
 ```
 
 ## Drift workflow (when upstream changes)
+
+New releases are noticed automatically: the daily `upstream-checks` workflow runs
+`check_releases.py` (compares pinned `sources.toml` tags against upstream tags via
+anonymous `git ls-remote`) plus `sync_specs.py` in plan mode, and opens a tracking issue
+when either finds something. For a *new version*, first retarget/add `[[source]]` entries
+in the skill's `sources.toml` to the new tag, then:
 
 1. `uv run scripts/sync_specs.py` — see what drifted.
 2. Review the diff. Decide whether the change is mechanical (schema field added) or semantic
@@ -125,6 +146,7 @@ uv run scripts/validate_skill.py skills            # lint all skills
 
 ## Current state
 
-This repo is being bootstrapped. As of this writing, `REFERENCES.md` and `CLAUDE.md` exist,
-but `skills/`, `scripts/`, `tests/`, and `pyproject.toml` are not yet created. When picking up
-work, check what exists before assuming any of the above is in place.
+The repo is fully bootstrapped: three skills (`odcs-yaml`, `odps-yaml`, `odcs-python`), the
+sync/validate tooling, tests, CI (`.github/workflows/ci.yml`), an automatic patch-version-bump
+workflow for `marketplace.json`, and the marketplace + `bitol` bundle plugin metadata all
+exist. When picking up work, still check the tree — this section can lag reality.

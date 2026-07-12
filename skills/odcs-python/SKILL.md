@@ -239,7 +239,7 @@ except ValidationError as e:
 None published. The lowest mapped spec version is 3.0.1, served by pip module `>=3.0.1`. v3.0.0 contracts will likely parse against `>=3.0.1`, but it is not officially supported.
 
 **"How do I validate a contract?"**
-Just construct it: `OpenDataContractStandard.from_file(path)`. If it raises `pydantic.ValidationError`, it's invalid. There is no separate validator method.
+Just construct it: `OpenDataContractStandard.from_file(path)`. If it raises `pydantic.ValidationError`, it's invalid. There is no separate validator method. **But note the converse does not hold**: every field on the model is declared `Optional` (see [`python/model.py`](references/python/model.py)), so construction succeeding does *not* prove the contract carries the spec's required fields (`apiVersion`, `kind`, `id`, `version`, `status`). For a full check, pair the model with JSON Schema validation against the spec's schema.
 
 **"How do I extract the bundled JSON Schema?"**
 `OpenDataContractStandard.json_schema()` — returns it as a string. `json.loads(...)` if you want a dict. The vendored copy is at [`python/schema.json`](references/python/schema.json).
