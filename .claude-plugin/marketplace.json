@@ -12,7 +12,7 @@
       "name": "bitol",
       "source": "./",
       "description": "All Bitol data-standard skills in one bundle: odcs-yaml (ODCS YAML contracts), odps-yaml (ODPS YAML data products), and odcs-python (the open-data-contract-standard PyPI package). Install this if you want full Bitol coverage without picking individual skills.",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "keywords": [
         "bitol",
         "odcs",
@@ -39,7 +39,7 @@
       "name": "odps-yaml",
       "source": "./skills/odps-yaml",
       "description": "Open Data Product Standard (ODPS) reference for the YAML data product format. Covers data products, input/output/management ports, and the relationship between ODPS data products and ODCS data contracts. Supports ODPS 1.0.0.",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "keywords": [
         "bitol",
         "odps",
@@ -51,7 +51,7 @@
       "name": "odcs-python",
       "source": "./skills/odcs-python",
       "description": "Open Data Contract Standard (ODCS) Python implementation reference for the open-data-contract-standard PyPI package. Covers the OpenDataContractStandard Pydantic model, parsing, constructing, validating, the spec-to-pip-module version map, and common gotchas. Supports ODCS spec 3.0.1, 3.0.2, and 3.1.0.",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "keywords": [
         "bitol",
         "odcs",
